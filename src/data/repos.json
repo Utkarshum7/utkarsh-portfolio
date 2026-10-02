@@ -1,0 +1,25 @@
+{
+  "$comment": "Public repositories linked from the site, with the commit each evidence link is pinned to. A repository rename is a one-line change here. Claims refer to files as 'repo:<key>:<path>' and to the repo root as 'repo:<key>'.",
+  "scopetrace": {
+    "url": "https://github.com/Utkarshum7/scopetrace-platform",
+    "sha": "d945ad93826561fb9e840d9b85f429ecf404d3a6"
+  },
+  "delta": {
+    "url": "https://github.com/Utkarshum7/hiver-sde-intern-assignment",
+    "sha": "075c43e8a05e414e36fa4e4fa52c623009529034"
+  },
+  "screener": {
+    "url": "https://github.com/Utkarshum7/AI-resume-screener",
+    "sha": "efb8949526b3545b194da14b175d38e1a3a73e22"
+  },
+  "robofleet": { "url": "https://github.com/Utkarshum7/robofleet-monitor" },
+  "appointments": { "url": "https://github.com/Utkarshum7/appointment-board" },
+  "taskora": { "url": "https://github.com/Utkarshum7/taskora-mobile-app" },
+  "copilot": { "url": "https://github.com/Utkarshum7/ai-investment-copilot" },
+  "edge": { "url": "https://github.com/Utkarshum7/edge-observability-stack" },
+  "apollo": { "url": "https://github.com/Utkarshum7/apollo-family-clinic" },
+  "vedaai": { "url": "https://github.com/Utkarshum7/vedaAI-academic-assessment" },
+  "dockermon": { "url": "https://github.com/Utkarshum7/docker-monitoring-stack" },
+  "k8snotes": { "url": "https://github.com/Utkarshum7/k8s-notes-app-deployment" },
+  "vyasa": { "url": "https://github.com/Utkarshum7/IDP-Mahabharata" }
+}

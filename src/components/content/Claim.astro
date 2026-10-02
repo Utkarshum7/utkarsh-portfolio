@@ -1,0 +1,72 @@
+---
+/**
+ * Inline claim with a source marker.
+ * - Renders the registry text, or the slot when the sentence needs different wording around the same fact.
+ * - Unknown ids fail the build (rule R4, see lib/claims.ts).
+ * - `marker={false}` for repeated mentions; owner-confirmed claims without a public URL render as plain text.
+ * - On wide case-study layouts the source label is echoed in the margin (decorative; the link carries the name).
+ */
+import { getClaim } from '../../lib/claims';
+import Icon from '../site/Icon.astro';
+
+interface Props {
+  id: string;
+  marker?: boolean;
+  sidenote?: boolean;
+}
+const { id, marker = true, sidenote = false } = Astro.props;
+const claim = await getClaim(id);
+const hasSlot = Astro.slots.has('default');
+const showMarker = marker && Boolean(claim.href);
+---
+
+<span class="claim" data-claim={id}>
+  {hasSlot ? <slot /> : claim.text}
+  {showMarker && (
+    <a class="marker" href={claim.href} title={`Source: ${claim.label}`}>
+      <Icon name="arrow-up-right" size={12} />
+      <span class="visually-hidden">Source: {claim.label}</span>
+    </a>
+  )}
+  {showMarker && sidenote && (
+    <span class="sidenote" aria-hidden="true">
+      {claim.label}
+    </span>
+  )}
+</span>
+
+<style>
+  .marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: super;
+    line-height: 1;
+    margin-left: 0.05em;
+    margin-right: -0.15em;
+    padding: 0 0.1em;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .sidenote {
+    display: none;
+  }
+  @media (min-width: 1100px) {
+    :global(.has-margin) .sidenote {
+      display: block;
+      float: right;
+      clear: right;
+      width: 13rem;
+      margin-right: -15.5rem;
+      margin-top: 0.2em;
+      font-family: var(--font-mono);
+      font-size: var(--text-2xs);
+      line-height: var(--lh-2xs);
+      color: var(--ink-3);
+      border-top: var(--hairline) solid var(--rule);
+      padding-top: var(--space-1);
+      text-align: left;
+      white-space: normal;
+    }
+  }
+</style>

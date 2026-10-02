@@ -1,0 +1,57 @@
+---
+/** Evidence chip: short claim text that links to its source. */
+import { getClaim } from '../../lib/claims';
+import Icon from '../site/Icon.astro';
+
+interface Props {
+  id: string;
+}
+const claim = await getClaim(Astro.props.id);
+---
+
+{claim.href ? (
+  <a class="chip" href={claim.href} aria-label={`${claim.chip}, source: ${claim.label}`}>
+    <span>{claim.chip}</span>
+    <Icon name="arrow-up-right" size={12} />
+  </a>
+) : (
+  <span class="chip">{claim.chip}</span>
+)}
+
+<style>
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 1.75rem;
+    padding: var(--space-1) var(--space-2);
+    border: var(--hairline) solid var(--control);
+    border-radius: var(--radius-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--lh-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    text-decoration: none;
+    text-wrap: balance;
+    position: relative;
+    z-index: 1;
+  }
+  a.chip {
+    color: var(--ink);
+  }
+  a.chip :global(.icon) {
+    color: var(--accent);
+  }
+  @media (pointer: coarse) {
+    a.chip {
+      min-height: var(--target);
+    }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    a.chip:hover {
+      border-color: var(--ink-2);
+      color: var(--ink);
+    }
+  }
+</style>

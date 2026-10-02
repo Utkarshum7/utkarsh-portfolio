@@ -1,0 +1,171 @@
+---
+/**
+ * Flagship project card. The title link is stretched over the card; chips and secondary links
+ * sit above it and stay individually focusable. No screenshot at launch (none current and verified), so the card
+ * is text-first by design.
+ */
+import type { CollectionEntry } from 'astro:content';
+import EvidenceChip from './EvidenceChip.astro';
+import ExtLink from './ExtLink.astro';
+import Dots from './Dots.astro';
+import Icon from '../site/Icon.astro';
+import { resolveUrl } from '../../lib/urls';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  index: number;
+  headingLevel?: 'h2' | 'h3';
+}
+const { project, index, headingLevel = 'h3' } = Astro.props;
+const d = project.data;
+const H = headingLevel;
+const href = `/work/${project.id}`;
+const meta = [String(index).padStart(2, '0'), d.context, 'Solo', String(d.year)];
+---
+
+<article class="card">
+  <div class="layout">
+    <div class="head">
+      <p class="meta">
+        <Dots items={meta} />
+      </p>
+      <H class="title">
+        <a href={href}>{d.title}</a>
+      </H>
+      {d.stackLine && (
+        <p class="stack">
+          <Dots items={d.stackLine.split(' · ')} />
+        </p>
+      )}
+    </div>
+    <div class="body">
+      <p class="summary">{d.summary}</p>
+      {d.problem && <p class="problem">{d.problem}</p>}
+      {d.cardNote && <p class="note">{d.cardNote}</p>}
+      {d.chips.length > 0 && (
+        <ul role="list" class="chips" aria-label="Evidence">
+          {d.chips.map((c) => (
+            <li>
+              <EvidenceChip id={c.id} />
+            </li>
+          ))}
+        </ul>
+      )}
+      <p class="links">
+        <a href={href} class="primary">
+          Case study <Icon name="arrow-right" size={14} />
+        </a>
+        {d.links.live && (
+          <ExtLink href={d.links.live}>Live demo{d.links.liveNote ? ` (${d.links.liveNote})` : ''}</ExtLink>
+        )}
+        {d.links.repo && <ExtLink href={resolveUrl(d.links.repo)}>Source</ExtLink>}
+      </p>
+    </div>
+  </div>
+</article>
+
+<style>
+  .card {
+    position: relative;
+    container-type: inline-size;
+    padding: var(--space-5);
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-2);
+    background: var(--surface);
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+  .title {
+    font-size: var(--text-lg);
+    line-height: var(--lh-lg);
+    margin-top: var(--space-2);
+  }
+  .title a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-2);
+  }
+  .title a:focus-visible {
+    outline: none;
+  }
+  .title a:focus-visible::after {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .stack {
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .summary {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    font-weight: 600;
+    color: var(--ink);
+    max-width: 44ch;
+  }
+  .problem {
+    margin-top: var(--space-3);
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+  .note {
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+  }
+  .links :global(a) {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+  }
+  .links .primary {
+    font-weight: 600;
+  }
+  .layout {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @container (min-width: 45rem) {
+    .layout {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: var(--space-6);
+    }
+  }
+  @media (min-width: 640px) {
+    .card {
+      padding: var(--space-6);
+    }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .card:hover {
+      border-color: var(--ink-3);
+    }
+    .card:hover .title a {
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+  }
+</style>

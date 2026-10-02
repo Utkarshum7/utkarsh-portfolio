@@ -1,0 +1,81 @@
+---
+/** Supporting / archive project row: title · what it shows · context · links. */
+import type { CollectionEntry } from 'astro:content';
+import ExtLink from './ExtLink.astro';
+import Dots from './Dots.astro';
+import { resolveUrl } from '../../lib/urls';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  compact?: boolean;
+}
+const { project, compact = false } = Astro.props;
+const d = project.data;
+---
+
+<li class:list={['row', { compact }]}>
+  <h3 class="title">{d.title}</h3>
+  <p class="what">{d.summary}</p>
+  <p class="context">
+    <Dots items={[d.context, ...(compact ? [String(d.year)] : (d.stackLine?.split(' · ') ?? []))]} />
+  </p>
+  <p class="links">
+    {d.links.live && (
+      <ExtLink href={d.links.live}>
+        Live<span class="visually-hidden"> demo of {d.title}</span>
+      </ExtLink>
+    )}
+    {d.links.repo && (
+      <ExtLink href={resolveUrl(d.links.repo)}>
+        Source<span class="visually-hidden"> of {d.title}</span>
+      </ExtLink>
+    )}
+  </p>
+</li>
+
+<style>
+  .row {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-4);
+    border-top: var(--hairline) solid var(--rule);
+  }
+  .title {
+    font-size: 1rem;
+    line-height: var(--lh-sm);
+  }
+  .what {
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    max-width: var(--measure);
+  }
+  .context {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .links {
+    display: flex;
+    gap: var(--space-4);
+    font-size: var(--text-sm);
+  }
+  .links :global(a) {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+  @media (min-width: 1024px) {
+    .row {
+      grid-template-columns: 14rem minmax(0, 1fr) 12rem 7.5rem;
+      gap: var(--space-5);
+      align-items: baseline;
+    }
+    .links {
+      justify-content: flex-end;
+    }
+    .links :global(a) {
+      min-height: auto;
+    }
+  }
+</style>

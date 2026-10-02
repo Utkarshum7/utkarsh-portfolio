@@ -1,0 +1,200 @@
+---
+/**
+ * "Running systems": build-time snapshot only, no polling, no pulsing dots.
+ * If the snapshot is missing, malformed or stale, the section is not rendered at all (see lib/status.ts).
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import systemsFile from '../../data/systems.json';
+import { validateSnapshot, type Snapshot } from '../../lib/status';
+
+const file = path.join(process.cwd(), 'src/data/generated/status.json');
+let snapshot: Snapshot | null = null;
+try {
+  if (fs.existsSync(file)) {
+    snapshot = validateSnapshot(
+      JSON.parse(fs.readFileSync(file, 'utf8')),
+      systemsFile.systems.map((s) => s.id),
+    );
+  }
+} catch {
+  snapshot = null; // malformed JSON: hide the section rather than break the page
+}
+
+const label = {
+  responding: 'Responding',
+  'responding-after-cold-start': 'Responding after cold start',
+  'not-responding': 'Not responding at last check',
+} as const;
+
+const rows = snapshot
+  ? systemsFile.systems.map((s) => ({ ...s, result: snapshot.results.find((r) => r.id === s.id) }))
+  : [];
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    hour12: false,
+  }) + ' UTC';
+---
+
+{snapshot && (
+  <section class="section container" aria-labelledby="running-systems">
+    <h2 class="section-label" id="running-systems">
+      Running systems
+    </h2>
+    <p class="intro">
+      Checked automatically once a day. Free-tier services sleep when idle, so a first visit can take up to a
+      minute.
+    </p>
+    <table class="status">
+      <caption class="visually-hidden">Status of deployed demos at the last automatic check</caption>
+      <thead>
+        <tr>
+          <th scope="col">System</th>
+          <th scope="col">Runs on</th>
+          <th scope="col">Check</th>
+          <th scope="col">Status</th>
+          <th scope="col">Checked</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr>
+            <th scope="row">{r.name}</th>
+            <td>{r.host}</td>
+            <td class="mono">{r.check}</td>
+            <td>
+              {r.result ? (
+                <span class:list={['state', r.result.status]}>
+                  <span class="glyph" aria-hidden="true" />
+                  {label[r.result.status]}
+                </span>
+              ) : (
+                'Not checked'
+              )}
+            </td>
+            <td class="mono">{r.result ? fmt(r.result.checkedAt) : '—'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+)}
+
+<style>
+  .intro {
+    color: var(--ink-2);
+    max-width: var(--measure);
+    margin-bottom: var(--space-4);
+  }
+  .status {
+    width: 100%;
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: var(--space-3) var(--space-3) var(--space-3) 0;
+    border-bottom: var(--hairline) solid var(--rule);
+    vertical-align: baseline;
+  }
+  thead th {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+  tbody th {
+    font-weight: 600;
+  }
+  .mono {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+  .state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .glyph {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    flex: none;
+  }
+  .responding {
+    color: var(--ok);
+  }
+  .responding .glyph {
+    background: currentColor;
+  }
+  .responding-after-cold-start {
+    color: var(--warn);
+  }
+  .responding-after-cold-start .glyph {
+    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  }
+  .not-responding {
+    color: var(--ink-3);
+  }
+  /* Mobile: two-line rows */
+  @media (max-width: 639px) {
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    tr {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      column-gap: var(--space-2);
+      row-gap: var(--space-1);
+      border-bottom: var(--hairline) solid var(--rule);
+      padding-block: var(--space-3);
+    }
+    /* Line break between "name · status" and "host · check · time" */
+    tr::after {
+      content: '';
+      order: 2;
+      flex-basis: 100%;
+      height: 0;
+    }
+    th,
+    td {
+      border: 0;
+      padding: 0;
+    }
+    tbody th {
+      order: 0;
+      flex: 1 1 auto;
+    }
+    tbody td:nth-child(4) {
+      order: 1;
+    }
+    tbody td:nth-child(2),
+    tbody td:nth-child(3),
+    tbody td:nth-child(5) {
+      order: 3;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--ink-3);
+    }
+    tbody td:nth-child(2)::after,
+    tbody td:nth-child(3)::after {
+      content: ' ·';
+    }
+  }
+</style>

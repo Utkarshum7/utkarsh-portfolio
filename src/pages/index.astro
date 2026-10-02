@@ -1,0 +1,410 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/content/ProjectCard.astro';
+import ProjectRow from '../components/content/ProjectRow.astro';
+import Claim from '../components/content/Claim.astro';
+import ExtLink from '../components/content/ExtLink.astro';
+import CopyEmail from '../components/content/CopyEmail.astro';
+import EventList from '../components/content/EventList.astro';
+import CertList from '../components/content/CertList.astro';
+import StatusPanel from '../components/content/StatusPanel.astro';
+import Icon from '../components/site/Icon.astro';
+import Dots from '../components/content/Dots.astro';
+import { profile } from '../data/profile';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const flagships = projects.filter((p) => p.data.tier === 'flagship');
+const supporting = projects.filter((p) => p.data.tier === 'supporting');
+
+const site = new URL('/', Astro.site).href;
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: profile.name, url: site },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: profile.name,
+    url: site,
+    jobTitle: 'Backend engineer',
+    address: { '@type': 'PostalAddress', addressLocality: 'Bengaluru', addressCountry: 'IN' },
+    alumniOf: { '@type': 'CollegeOrUniversity', name: 'RV College of Engineering' },
+    sameAs: [profile.github, profile.linkedin],
+    knowsAbout: ['Python', 'Backend engineering', 'AI systems', 'LLM evaluation'],
+  },
+];
+---
+
+<BaseLayout
+  title="Utkarsh Amaresh · Backend engineer, Python & AI systems"
+  description="Backend engineer building Python systems where AI assists and deterministic code decides, with tests, evaluation and deployments you can check."
+  jsonLd={jsonLd}
+>
+  <!-- 1. Identity -->
+  <section class="hero container" aria-labelledby="statement">
+    <p class="meta">
+      <Dots items={[profile.name, ...profile.roleLine.split(' · ')]} />
+    </p>
+    <h1 id="statement">{profile.statement}</h1>
+    <p class="lead">
+      I built{' '}
+      <a href="/work/scopetrace">
+        <strong>ScopeTrace</strong>
+      </a>
+      , an emissions-reporting platform whose AI layer can explain the data but is designed, and tested per
+      feature, never to change it, with <Claim id="st.tests.backend" /> running in CI; and{' '}
+      <a href="/work/support-intelligence">a customer-support agent</a> I judged the hard way: against two
+      baselines, on <Claim id="dsi.golden.human" />, with its weakest number in the headline.
+    </p>
+    <p class="status-line">
+      <span>{profile.location}</span>
+      <span>{profile.education}</span>
+      <span>{profile.availability}</span>
+    </p>
+    <ul role="list" class="proof">
+      <li>
+        <a href="/work/scopetrace" class="proof-primary">
+          Read the ScopeTrace case study <Icon name="arrow-right" size={14} />
+        </a>
+      </li>
+      <li>
+        <ExtLink href={profile.github} rel="me">
+          GitHub
+        </ExtLink>
+      </li>
+      <li>
+        <ExtLink href={profile.linkedin} rel="me">
+          LinkedIn
+        </ExtLink>
+      </li>
+      {profile.resume && (
+        <li>
+          <a href={profile.resume} download>
+            Résumé (PDF) <Icon name="download" size={14} />
+          </a>
+        </li>
+      )}
+      <li>
+        <CopyEmail />
+      </li>
+    </ul>
+  </section>
+
+  <!-- 2. Selected work -->
+  <section class="section container" aria-labelledby="selected-work">
+    <h2 class="section-label" id="selected-work">
+      Selected work
+    </h2>
+    <ol role="list" class="cards">
+      {flagships.map((p, i) => (
+        <li>
+          <ProjectCard project={p} index={i + 1} />
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <!-- 3. How I build -->
+  <section class="section container" aria-labelledby="how-i-build">
+    <h2 class="section-label" id="how-i-build">
+      How I build
+    </h2>
+    <ol role="list" class="principles">
+      <li>
+        <h3>AI proposes, code decides.</h3>
+        <p>
+          In ScopeTrace every model call passes through <Claim id="st.gateway">one gateway</Claim> that checks
+          policy, budget and data egress before the call and validates the response after it. The AI package
+          is designed not to write emission records, and for each of its five features{' '}
+          <Claim id="st.invariants">a test checks that running it leaves those records unchanged</Claim>.
+        </p>
+        <a href="/work/scopetrace#decision-one-gateway-for-every-ai-call">
+          See the gateway <Icon name="arrow-right" size={14} />
+        </a>
+      </li>
+      <li>
+        <h3>Measure it, including where it fails.</h3>
+        <p>
+          Delta Support Intelligence's most important number is <Claim id="dsi.escalation" />: it left{' '}
+          <Claim id="dsi.fn" marker={false} /> to be handled automatically. I lead with it because it decides
+          whether the system is safe to use.
+        </p>
+        <a href="/work/support-intelligence#results-against-baselines">
+          See the evaluation <Icon name="arrow-right" size={14} />
+        </a>
+      </li>
+      <li>
+        <h3>Make it operable.</h3>
+        <p>
+          <Claim id="st.health">Health endpoints</Claim> for the database, workers and AI layer,{' '}
+          <Claim id="st.obs" />, and{' '}
+          <Claim id="st.demomode">a demo mode that runs the same task pipeline in-process</Claim> so the whole
+          system works on free hosting without changing its architecture.
+        </p>
+        <a href="/work/scopetrace#running-it-deployment-and-operations">
+          See how it runs <Icon name="arrow-right" size={14} />
+        </a>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 4. More work -->
+  <section class="section container" aria-labelledby="more-work">
+    <div class="section-head">
+      <h2 class="section-label" id="more-work">
+        More work
+      </h2>
+      <a href="/work" class="all">
+        All work <Icon name="arrow-right" size={14} />
+      </a>
+    </div>
+    <ul role="list" class="rows">
+      {supporting.map((p) => (
+        <ProjectRow project={p} />
+      ))}
+    </ul>
+  </section>
+
+  <!-- 5. Running systems (build-time snapshot; omitted when no snapshot exists) -->
+  <StatusPanel />
+
+  <!-- 6. Experience -->
+  <section class="section container" aria-labelledby="experience">
+    <h2 class="section-label" id="experience">
+      Experience
+    </h2>
+    <div class="experience">
+      <div class="job">
+        <h3>DevOps Intern, Octakaigon Bock Private Limited</h3>
+        <p class="when">Jun 2025 – May 2026</p>
+        <p>
+          <Claim id="job.role" marker={false}>
+            Diagnosed and fixed production issues on AWS- and GCP-hosted backend APIs from their application,
+            HTTP, network and system logs; deployed and maintained containerised services with Docker and
+            Kubernetes, using Terraform and GitHub Actions for repeatable infrastructure and CI/CD; and wrote
+            Python automation for recurring diagnostics, with Prometheus and Grafana for monitoring.
+          </Claim>
+        </p>
+        <h3 class="edu">B.E., RV College of Engineering</h3>
+        <p class="when">Bengaluru · Graduated 2026</p>
+      </div>
+      <div class="certs">
+        <h3>Certifications</h3>
+        <CertList />
+      </div>
+    </div>
+    <p class="more">
+      <a href="/about">
+        More about me <Icon name="arrow-right" size={14} />
+      </a>
+    </p>
+  </section>
+
+  <!-- 7. Events & hackathons -->
+  <section class="section container" aria-labelledby="events">
+    <h2 class="section-label" id="events">
+      Events &amp; hackathons
+    </h2>
+    <p class="intro">Where I build and learn outside my own repositories.</p>
+    <EventList />
+  </section>
+
+  <!-- 8. Contact -->
+  <section class="section container" aria-labelledby="contact">
+    <h2 class="section-label" id="contact">
+      Contact
+    </h2>
+    <p class="contact-line">
+      I'm available immediately and happy to walk through any of this work in detail, including the parts that
+      didn't work.
+    </p>
+    <ul role="list" class="contact">
+      <li>
+        <CopyEmail />
+      </li>
+      <li>
+        <ExtLink href={profile.linkedin}>LinkedIn</ExtLink>
+      </li>
+      <li>
+        <ExtLink href={profile.github}>GitHub</ExtLink>
+      </li>
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: var(--space-8) var(--space-9);
+  }
+  @media (min-width: 1024px) {
+    .hero {
+      padding-block: var(--space-11) var(--space-10);
+    }
+  }
+  .hero h1 {
+    margin-top: var(--space-5);
+    font-size: var(--text-hero);
+    line-height: var(--lh-hero);
+    letter-spacing: -0.015em;
+    max-width: 30ch;
+  }
+  .lead {
+    margin-top: var(--space-5);
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+  .lead strong {
+    color: var(--ink);
+  }
+  .status-line {
+    margin-top: var(--space-5);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+    flex-direction: column;
+  }
+  @media (min-width: 640px) {
+    .status-line {
+      flex-direction: row;
+    }
+    .status-line span + span::before {
+      content: '·';
+      margin-right: var(--space-4);
+      color: var(--rule-strong);
+    }
+  }
+  .proof {
+    margin-top: var(--space-6);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-1) var(--space-5);
+    font-size: var(--text-sm);
+  }
+  .proof li:first-child,
+  .proof li:last-child {
+    grid-column: 1 / -1;
+  }
+  .proof :global(a) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+  }
+  .proof-primary {
+    font-weight: 600;
+  }
+  @media (min-width: 640px) {
+    .proof {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+  }
+  .cards {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .principles {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .principles h3 {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+  }
+  .principles p {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+  .principles a,
+  .more a,
+  .all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+  }
+  @media (min-width: 1024px) {
+    .principles {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+    .principles li {
+      border-top: var(--hairline) solid var(--rule-strong);
+      padding-top: var(--space-4);
+    }
+  }
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-4);
+  }
+  .section-head .all {
+    margin-top: 0;
+  }
+  .rows {
+    display: grid;
+  }
+  .experience {
+    display: grid;
+    gap: var(--space-7);
+  }
+  .experience h3 {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+  }
+  .experience .edu {
+    margin-top: var(--space-6);
+  }
+  .when {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .job p:not(.when) {
+    margin-top: var(--space-3);
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+  .certs h3 {
+    margin-bottom: var(--space-4);
+  }
+  @media (min-width: 1024px) {
+    .experience {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: var(--space-8);
+    }
+  }
+  .more {
+    margin-top: var(--space-5);
+  }
+  .intro {
+    margin-bottom: var(--space-4);
+  }
+  .intro,
+  .contact-line {
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+  .contact {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-6);
+    align-items: center;
+  }
+  .contact :global(a) {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+</style>

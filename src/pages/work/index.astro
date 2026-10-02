@@ -1,0 +1,172 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/content/ProjectCard.astro';
+import ProjectRow from '../../components/content/ProjectRow.astro';
+import ExtLink from '../../components/content/ExtLink.astro';
+import { resolveUrl } from '../../lib/urls';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const flagships = projects.filter((p) => p.data.tier === 'flagship');
+const supporting = projects.filter((p) => p.data.tier === 'supporting');
+const archive = projects.filter((p) => p.data.tier === 'archive');
+---
+
+<BaseLayout
+  title="Work · Utkarsh Amaresh"
+  description="Case studies and projects: backend services, AI systems with evaluation, and the front-end work around them."
+>
+  <div class="container work">
+    <header class="head">
+      <h1>Work</h1>
+      <p class="lead">
+        Three case studies go deep; the rest are smaller projects. Every case study and project listed here
+        was built solo.
+      </p>
+    </header>
+
+    <section class="section" aria-labelledby="case-studies">
+      <h2 class="section-label" id="case-studies">
+        Case studies
+      </h2>
+      <ol role="list" class="cards">
+        {flagships.map((p, i) => (
+          <li>
+            <ProjectCard project={p} index={i + 1} />
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="section" aria-labelledby="more-heading" id="more">
+      <h2 class="section-label" id="more-heading">
+        Projects
+      </h2>
+      <ul role="list" class="rows">
+        {supporting.map((p) => (
+          <ProjectRow project={p} />
+        ))}
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="archive">
+      <h2 class="section-label" id="archive">
+        Archive
+      </h2>
+      <p class="note">Earlier and smaller work, kept for completeness.</p>
+      <table class="archive">
+        <caption class="visually-hidden">Archived projects</caption>
+        <thead>
+          <tr>
+            <th scope="col">Project</th>
+            <th scope="col">Note</th>
+            <th scope="col">Year</th>
+            <th scope="col">Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          {archive.map((p) => (
+            <tr>
+              <th scope="row">{p.data.title}</th>
+              <td>{p.data.summary}</td>
+              <td class="year">{p.data.year}</td>
+              <td>
+                {p.data.links.live ? (
+                  <ExtLink href={p.data.links.live}>
+                    Live<span class="visually-hidden"> {p.data.title}</span>
+                  </ExtLink>
+                ) : p.data.links.repo ? (
+                  <ExtLink href={resolveUrl(p.data.links.repo)}>
+                    Source<span class="visually-hidden"> of {p.data.title}</span>
+                  </ExtLink>
+                ) : null}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .work {
+    padding-top: var(--space-8);
+  }
+  .head {
+    padding-bottom: var(--space-7);
+  }
+  .lead {
+    margin-top: var(--space-4);
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+  .cards {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .rows {
+    display: grid;
+  }
+  .note {
+    color: var(--ink-2);
+    margin-bottom: var(--space-4);
+  }
+  .archive {
+    width: 100%;
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+  }
+  .archive th,
+  .archive td {
+    text-align: left;
+    vertical-align: baseline;
+    padding: var(--space-3) var(--space-3) var(--space-3) 0;
+    border-bottom: var(--hairline) solid var(--rule);
+  }
+  .archive thead th {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+  .archive tbody th {
+    font-weight: 600;
+  }
+  .archive td {
+    color: var(--ink-2);
+  }
+  .year {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+  @media (max-width: 639px) {
+    .archive thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .archive tr {
+      display: grid;
+      gap: var(--space-1);
+      padding-block: var(--space-3);
+      border-bottom: var(--hairline) solid var(--rule);
+    }
+    .archive th,
+    .archive td {
+      padding: 0;
+      border: 0;
+    }
+    .archive td a {
+      display: inline-flex;
+      min-height: var(--target);
+      align-items: center;
+    }
+  }
+</style>

@@ -1,0 +1,436 @@
+# Publishable claims. Every number and strong claim on the site renders from this file.
+# Only VERIFIED, PARTIALLY_VERIFIED or OWNER_CONFIRMED may appear here (the schema rejects anything else).
+# Source labels are written for people: no paths, hashes or hostnames. URLs are public; `repo:<key>:<path>`
+# expands via src/data/repos.json to a GitHub link pinned to a commit.
+
+# ---------- Identity ----------
+- id: id.name
+  text: Utkarsh Amaresh
+  status: VERIFIED
+  source: { label: GitHub profile, url: 'https://github.com/Utkarshum7' }
+  checked: 2026-10-01
+- id: id.location
+  text: Bengaluru, India
+  status: OWNER_CONFIRMED
+  decision: D-061
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: id.availability
+  text: Available immediately
+  status: OWNER_CONFIRMED
+  decision: D-061
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: edu.degree
+  text: B.E., RV College of Engineering, 2026
+  status: OWNER_CONFIRMED
+  decision: D-070
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: role.solo
+  text: Solo project
+  status: VERIFIED
+  source: { label: Commit history on GitHub, url: 'https://github.com/Utkarshum7' }
+  checked: 2026-10-01
+
+# ---------- Internship ----------
+- id: job.role
+  text: DevOps Intern, Octakaigon Bock Private Limited, Jun 2025 – May 2026
+  status: OWNER_CONFIRMED
+  decision: D-062
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+
+# ---------- Certifications ----------
+- id: cert.oci-multicloud
+  text: Oracle Cloud Infrastructure 2025 Certified Multicloud Architect Professional
+  status: VERIFIED
+  source:
+    label: Oracle credential record
+    url: 'https://catalog-education.oracle.com/ords/certview/sharebadge?id=9AF43CFD850C7439E6E919020DC2AD7218D2B8850C764836AD9262F4F9BABD93'
+  checked: 2026-10-01
+  note: Issued 2 Sep 2025, valid to 2 Sep 2027
+- id: cert.oci-genai
+  text: Oracle Cloud Infrastructure 2025 Certified Generative AI Professional
+  status: OWNER_CONFIRMED
+  decision: D-064
+  source: { label: Certificate }
+  checked: 2026-10-01
+- id: cert.nptel-dse
+  text: 'NPTEL: Data Science for Engineers (IIT Madras)'
+  status: OWNER_CONFIRMED
+  decision: D-075
+  source: { label: Certificate }
+  checked: 2026-10-01
+
+# ---------- ScopeTrace ----------
+- id: st.tests.backend
+  text: 937 backend tests
+  chip: 937 backend tests
+  status: VERIFIED
+  source:
+    label: GitHub Actions run, 14 Jul 2026
+    url: 'https://github.com/Utkarshum7/scopetrace-platform/actions/runs/29376936165'
+  checked: 2026-10-01
+  note: Run against PostgreSQL 16 and Redis 7 service containers
+- id: st.tests.ai
+  text: 13 AI-evaluation tests
+  status: VERIFIED
+  source:
+    label: GitHub Actions run, 14 Jul 2026
+    url: 'https://github.com/Utkarshum7/scopetrace-platform/actions/runs/29376936165'
+  checked: 2026-10-01
+- id: st.tests.frontend
+  text: 95 frontend tests
+  status: VERIFIED
+  source:
+    label: GitHub Actions run, 14 Jul 2026
+    url: 'https://github.com/Utkarshum7/scopetrace-platform/actions/runs/29376936173'
+  checked: 2026-10-01
+- id: st.ci
+  text: all four CI workflows passed on the described commit
+  status: VERIFIED
+  source: { label: GitHub Actions runs, url: 'https://github.com/Utkarshum7/scopetrace-platform/actions' }
+  checked: 2026-10-01
+- id: st.adrs
+  text: 14 design decision records
+  chip: 14 design decision records
+  status: VERIFIED
+  source: { label: Decision records, url: 'repo:scopetrace:docs/adr' }
+  checked: 2026-10-01
+- id: st.live.fe
+  text: Live demo
+  chip: Live demo
+  status: VERIFIED
+  source: { label: Live demo, url: 'https://scopetrace-platform.vercel.app/' }
+  checked: 2026-10-01
+- id: st.live.be
+  text: API and database healthy in demo mode
+  status: VERIFIED
+  source:
+    { label: API health endpoint, url: 'https://p01--scopetrace-backend--7gpwm4f4br2c.code.run/healthz' }
+  checked: 2026-10-01
+- id: st.demo.login
+  text: demo accounts listed on the demo's sign-in page
+  status: PARTIALLY_VERIFIED
+  source: { label: Demo sign-in page, url: 'https://scopetrace-platform.vercel.app/' }
+  checked: 2026-10-01
+  note: Accounts are listed publicly on the sign-in page; signing in was not tested by the site build
+- id: st.origin
+  text: Independent project
+  status: OWNER_CONFIRMED
+  decision: D-076
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: st.gateway
+  text: one gateway for every AI call
+  status: VERIFIED
+  source: { label: Gateway source, url: 'repo:scopetrace:backend/apps/ai/services/gateway.py' }
+  checked: 2026-10-01
+- id: st.importguard
+  text: import-guard test for the AI package
+  status: VERIFIED
+  source: { label: Import-guard test, url: 'repo:scopetrace:backend/apps/ai/tests_import_guard.py' }
+  checked: 2026-10-01
+- id: st.invariants
+  text: a test for each AI feature checks it leaves governed records unchanged
+  status: VERIFIED
+  source: { label: Invariant tests, url: 'repo:scopetrace:backend/apps/ai/evaluation/tests_invariants.py' }
+  checked: 2026-10-01
+- id: st.advisory
+  text: AI output is stored as separate annotations
+  status: VERIFIED
+  source:
+    {
+      label: Decision record on advisory-only AI,
+      url: 'repo:scopetrace:docs/adr/0006-ai-advisory-only-no-direct-mutation.md',
+    }
+  checked: 2026-10-01
+- id: st.ai.dispatch
+  text: AI tasks are dispatched separately from the deterministic chain
+  status: VERIFIED
+  source: { label: Ingestion task source, url: 'repo:scopetrace:backend/apps/ingestion/tasks.py' }
+  checked: 2026-10-01
+- id: st.races
+  text: multi-threaded concurrency tests
+  status: VERIFIED
+  source:
+    { label: Budget concurrency tests, url: 'repo:scopetrace:backend/apps/ai/tests_budget_concurrency.py' }
+  checked: 2026-10-01
+- id: st.idempotency
+  text: duplicate requests never record two successful results
+  status: VERIFIED
+  source:
+    {
+      label: Idempotency concurrency tests,
+      url: 'repo:scopetrace:backend/apps/ai/tests_idempotency_concurrency.py',
+    }
+  checked: 2026-10-01
+- id: st.budget.usd
+  text: monthly AI budget per organisation, in US dollars
+  status: VERIFIED
+  source: { label: AI models source, url: 'repo:scopetrace:backend/apps/ai/models.py' }
+  checked: 2026-10-01
+- id: st.hashchain
+  text: per-organisation SHA-256 hash chain over the audit log
+  status: VERIFIED
+  source: { label: Audit service source, url: 'repo:scopetrace:backend/apps/audit/services.py' }
+  checked: 2026-10-01
+- id: st.workflow
+  text: model-enforced approval workflow
+  status: VERIFIED
+  source:
+    {
+      label: Decision record on the approval workflow,
+      url: 'repo:scopetrace:docs/adr/0001-fixed-approval-workflow-status-field.md',
+    }
+  checked: 2026-10-01
+- id: st.queues
+  text: dedicated Celery queues
+  status: VERIFIED
+  source: { label: Task routing settings, url: 'repo:scopetrace:backend/config/settings.py' }
+  checked: 2026-10-01
+- id: st.demomode
+  text: demo mode runs the same task chain in-process
+  status: VERIFIED
+  source: { label: Execution-mode source, url: 'repo:scopetrace:backend/apps/core/execution.py' }
+  checked: 2026-10-01
+- id: st.health
+  text: three health endpoints
+  status: VERIFIED
+  source: { label: URL configuration, url: 'repo:scopetrace:backend/config/urls.py' }
+  checked: 2026-10-01
+- id: st.obs
+  text: per-request correlation IDs in the logs
+  status: VERIFIED
+  source: { label: Request-ID middleware, url: 'repo:scopetrace:backend/apps/core/middleware.py' }
+  checked: 2026-10-01
+- id: st.golden
+  text: a golden dataset for each AI feature
+  status: VERIFIED
+  source: { label: Golden datasets, url: 'repo:scopetrace:backend/apps/ai/evaluation/fixtures/golden' }
+  checked: 2026-10-01
+- id: st.eval.real
+  text: evaluated answer quality with a real model separately
+  status: OWNER_CONFIRMED
+  decision: D-067
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: st.debug.esg
+  text: demo provider and stage logging fix
+  status: VERIFIED
+  source:
+    {
+      label: Commit with the fix,
+      url: 'https://github.com/Utkarshum7/scopetrace-platform/commit/b668f0a508ba04a608f21b0ca800c30dae26c9fb',
+    }
+  checked: 2026-10-01
+- id: st.factors
+  text: an illustrative subset of DEFRA 2024 factors
+  status: VERIFIED
+  source: { label: Project README, url: 'repo:scopetrace:README.md' }
+  checked: 2026-10-01
+- id: st.samples
+  text: sample files
+  status: VERIFIED
+  source: { label: Sample data files, url: 'repo:scopetrace:sample_data' }
+  checked: 2026-10-01
+
+# ---------- Delta Support Intelligence ----------
+- id: dsi.data
+  text: 26,168 conversation threads (87,994 messages)
+  status: VERIFIED
+  source: { label: Evaluation report, url: 'repo:delta:REPORT.md' }
+  checked: 2026-10-01
+- id: dsi.license
+  text: 'Customer Support on Twitter (Thought Vector), CC BY-NC-SA 4.0'
+  status: VERIFIED
+  source:
+    {
+      label: Dataset page on Kaggle,
+      url: 'https://www.kaggle.com/datasets/thoughtvector/customer-support-on-twitter',
+    }
+  checked: 2026-10-01
+- id: dsi.split
+  text: conversation-level split that prevents leakage
+  status: VERIFIED
+  source: { label: Retrieval design notes, url: 'repo:delta:docs/retrieval_design.md' }
+  checked: 2026-10-01
+- id: dsi.taxonomy
+  text: 10 intent categories derived from the data
+  status: VERIFIED
+  source: { label: Intent taxonomy, url: 'repo:delta:docs/intent_taxonomy.md' }
+  checked: 2026-10-01
+- id: dsi.golden
+  text: 200-example golden set
+  status: VERIFIED
+  source: { label: Golden set, url: 'repo:delta:data/golden_eval/golden_annotation.csv' }
+  checked: 2026-10-01
+- id: dsi.golden.human
+  text: 200 human-reviewed examples
+  chip: 200 human-reviewed examples
+  status: VERIFIED
+  source:
+    { label: Golden set (annotation-source column), url: 'repo:delta:data/golden_eval/golden_annotation.csv' }
+  checked: 2026-10-01
+  note: 85 AI proposals approved, 109 corrected, 6 labelled directly; reviewer confirmed by the owner (D-066)
+- id: dsi.gates
+  text: 14 validation checks, including leakage checks
+  status: VERIFIED
+  source: { label: Golden-set validation script, url: 'repo:delta:scripts/validate_golden_set.py' }
+  checked: 2026-10-01
+- id: dsi.results
+  text: evaluation results for the agent and both baselines
+  status: VERIFIED
+  source: { label: Evaluation results file, url: 'repo:delta:reports/evaluation_results.json' }
+  checked: 2026-10-01
+- id: dsi.intent
+  text: 56.5% intent accuracy
+  chip: 56.5% vs 36.0% retrieval baseline
+  status: VERIFIED
+  source: { label: Evaluation results file, url: 'repo:delta:reports/evaluation_results.json' }
+  checked: 2026-10-01
+- id: dsi.escalation
+  text: escalation recall of 51.7%
+  status: VERIFIED
+  source: { label: Evaluation results file, url: 'repo:delta:reports/evaluation_results.json' }
+  checked: 2026-10-01
+- id: dsi.fn
+  text: 43 of the 89 test cases that needed a person
+  status: VERIFIED
+  source: { label: Evaluation results file, url: 'repo:delta:reports/evaluation_results.json' }
+  checked: 2026-10-01
+- id: dsi.failures
+  text: the five largest failure modes
+  status: VERIFIED
+  source: { label: Evaluation report, url: 'repo:delta:REPORT.md' }
+  checked: 2026-10-01
+- id: dsi.live
+  text: Live demo
+  chip: Live demo
+  status: VERIFIED
+  source: { label: Live demo, url: 'https://delta-support-intelligence-demo.onrender.com/' }
+  checked: 2026-10-01
+
+# ---------- Résumé Screener ----------
+- id: ars.what
+  text: every score computed in Python
+  chip: Every score computed in Python
+  status: VERIFIED
+  source: { label: Scoring module, url: 'repo:screener:src/scoring.py' }
+  checked: 2026-10-01
+- id: ars.eligibility
+  text: deterministic eligibility gate
+  status: VERIFIED
+  source: { label: Eligibility module, url: 'repo:screener:src/eligibility.py' }
+  checked: 2026-10-01
+- id: ars.fallback
+  text: LLM failures fall back, per candidate
+  chip: LLM failures fall back, per candidate
+  status: VERIFIED
+  source: { label: Reliability tests, url: 'repo:screener:tests/test_reliability.py' }
+  checked: 2026-10-01
+- id: ars.github
+  text: in-run cache for GitHub lookups
+  status: VERIFIED
+  source: { label: GitHub cache test, url: 'repo:screener:tests/test_github_cache.py' }
+  checked: 2026-10-01
+- id: ars.run50
+  text: 50 parsed, 33 eligible, 3 LLM failures handled per candidate
+  status: OWNER_CONFIRMED
+  decision: D-076
+  source: { label: Project README (run summary), url: 'repo:screener:README.md' }
+  checked: 2026-10-01
+- id: ars.limits
+  text: documented limitations
+  status: VERIFIED
+  source: { label: Project README, url: 'repo:screener:README.md' }
+  checked: 2026-10-01
+
+# ---------- Supporting projects ----------
+- id: rfm.what
+  text: one event pipeline and one reducer for two data sources
+  status: VERIFIED
+  source: { label: RoboFleet repository, url: 'repo:robofleet' }
+  checked: 2026-10-01
+- id: ab.what
+  text: server-side double-booking prevention
+  status: VERIFIED
+  source: { label: Appointment Board repository, url: 'repo:appointments' }
+  checked: 2026-10-01
+- id: tk.what
+  text: per-user task scoping that returns 404
+  status: VERIFIED
+  source: { label: Taskora repository, url: 'repo:taskora' }
+  checked: 2026-10-01
+- id: aic.what
+  text: safety check first, rule-based routing, streamed answers
+  status: VERIFIED
+  source: { label: Copilot repository, url: 'repo:copilot' }
+  checked: 2026-10-01
+- id: eos.what
+  text: monitoring within a 300 MB memory limit
+  status: PARTIALLY_VERIFIED
+  source: { label: Edge Observability repository, url: 'repo:edge' }
+  checked: 2026-10-01
+  note: The limit is configuration; measured footprints are not claimed
+- id: afc.what
+  text: fictional clinic demo
+  status: VERIFIED
+  source: { label: Apollo repository, url: 'repo:apollo' }
+  checked: 2026-10-01
+
+# ---------- Events ----------
+- id: evt.portkey.public
+  text: 'Portkey AI Builders Challenge, 17–18 Jan 2026, Bengaluru'
+  status: VERIFIED
+  source: { label: Event page, url: 'https://luma.com/ekza9ko4' }
+  checked: 2026-10-01
+- id: evt.portkey.owner
+  text: built a prompt-governance engine
+  status: OWNER_CONFIRMED
+  decision: D-070
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: evt.volvo
+  text: 'VOLVO DAY Hackathon 2024'
+  status: OWNER_CONFIRMED
+  decision: D-076
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: evt.iaf
+  text: 'IAF Innovation Challenge 2025'
+  status: OWNER_CONFIRMED
+  decision: D-076
+  source: { label: Owner confirmation }
+  checked: 2026-10-01
+- id: evt.aws
+  text: 'AWS Summit Bengaluru 2026, 22–23 Apr 2026'
+  status: VERIFIED
+  source: { label: AWS Summit Bengaluru page, url: 'https://aws.amazon.com/events/summits/bengaluru/' }
+  checked: 2026-10-01
+- id: evt.ather
+  text: 'Ather Community Day 2025, 30 Aug 2025'
+  status: VERIFIED
+  source:
+    {
+      label: Event report,
+      url: 'https://www.mobilityoutlook.com/news/athers-third-community-day-set-for-august-30-2025-in-bengaluru/',
+    }
+  checked: 2026-10-01
+- id: dsi.baseline
+  text: 36.0% for a retrieval-only baseline
+  status: VERIFIED
+  source: { label: Evaluation results file, url: 'repo:delta:reports/evaluation_results.json' }
+  checked: 2026-10-01
+- id: ars.rubric
+  text: 100-point scoring rubric with named penalties
+  status: VERIFIED
+  source: { label: Scoring methodology in the project README, url: 'repo:screener:README.md' }
+  checked: 2026-10-01
+- id: about.ai-statement
+  text: On using AI tools (approved statement)
+  status: OWNER_CONFIRMED
+  decision: D-070
+  source: { label: Owner approval }
+  checked: 2026-10-01

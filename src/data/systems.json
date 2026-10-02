@@ -1,0 +1,40 @@
+{
+  "$comment": "Running systems. Only URLs that are already public. Checked by scripts/check-status.mjs, never from visitors' browsers.",
+  "systems": [
+    {
+      "id": "scopetrace-web",
+      "name": "ScopeTrace web app",
+      "host": "Vercel",
+      "check": "page loads",
+      "url": "https://scopetrace-platform.vercel.app/"
+    },
+    {
+      "id": "scopetrace-api",
+      "name": "ScopeTrace API (demo mode)",
+      "host": "Northflank",
+      "check": "GET /healthz",
+      "url": "https://p01--scopetrace-backend--7gpwm4f4br2c.code.run/healthz"
+    },
+    {
+      "id": "dsi-demo",
+      "name": "Delta Support Intelligence demo",
+      "host": "Render (free tier)",
+      "check": "page loads",
+      "url": "https://delta-support-intelligence-demo.onrender.com/"
+    },
+    {
+      "id": "appointments-api",
+      "name": "Appointment Board API",
+      "host": "Render (free tier)",
+      "check": "GET /health",
+      "url": "https://appointment-board-api-qcdn.onrender.com/health"
+    },
+    {
+      "id": "robofleet",
+      "name": "RoboFleet Monitor",
+      "host": "Vercel",
+      "check": "page loads",
+      "url": "https://peppermint-robotics-challenge.vercel.app/"
+    }
+  ]
+}
