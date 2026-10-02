@@ -1,0 +1,34 @@
+---
+/**
+ * Decision card. The MDX supplies the heading ("## Decision: …") so it is collected into the
+ * table of contents, followed by Context / Chose / Rejected / Consequence paragraphs.
+ */
+---
+
+<section class="decision">
+  <slot />
+</section>
+
+<style>
+  .decision {
+    margin-top: var(--space-9);
+    border: var(--hairline) solid var(--rule-strong);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius-2);
+    padding: var(--space-5);
+    background: var(--surface);
+  }
+  .decision > :global(h2) {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .decision > :global(* + *) {
+    margin-top: var(--space-4);
+  }
+  @media (min-width: 640px) {
+    .decision {
+      padding: var(--space-6);
+    }
+  }
+</style>

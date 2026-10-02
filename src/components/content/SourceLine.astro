@@ -1,0 +1,28 @@
+---
+/** A visible "Source:" line under a table or list whose numbers all come from one claim. */
+import { getClaim } from '../../lib/claims';
+import ExtLink from './ExtLink.astro';
+
+interface Props {
+  id: string;
+}
+const claim = await getClaim(Astro.props.id);
+---
+
+<p class="source-line">
+  Source: {claim.href ? <ExtLink href={claim.href}>{claim.label}</ExtLink> : claim.label}
+</p>
+
+<style>
+  .source-line {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--lh-xs);
+    color: var(--ink-3);
+  }
+  :global(.prose) table + .source-line,
+  :global(.prose) ol + .source-line,
+  :global(.prose) ul + .source-line {
+    margin-top: var(--space-2);
+  }
+</style>

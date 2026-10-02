@@ -1,0 +1,144 @@
+---
+import '../styles/fonts-italic.css';
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import Toc from '../components/content/Toc.astro';
+import VerifyList from '../components/content/VerifyList.astro';
+import { profile } from '../data/profile';
+import { canonicalPath } from '../lib/urls';
+import Dots from '../components/content/Dots.astro';
+
+interface Props {
+  title: string;
+  summary: string;
+  context?: string;
+  year: number;
+  seo: { title: string; description: string };
+  headings: MarkdownHeading[];
+  evidence: { id: string; what: string }[];
+  repoUrl?: string;
+  next?: { href: string; title: string };
+}
+const { title, summary, context, year, seo, headings, evidence, repoUrl, next } = Astro.props;
+const canonical = new URL(canonicalPath(Astro.url.pathname), Astro.site).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: seo.title.split(' · ')[0],
+  description: seo.description,
+  url: canonical,
+  author: { '@type': 'Person', name: profile.name, url: new URL('/', Astro.site).href },
+  ...(repoUrl ? { about: { '@type': 'SoftwareSourceCode', name: title, codeRepository: repoUrl } } : {}),
+};
+---
+
+<BaseLayout title={seo.title} description={seo.description} ogType="article" jsonLd={jsonLd} stickyHeader>
+  <article class="case container">
+    <header class="case-head">
+      <p class="crumb">
+        <a href="/work">Work</a> <span aria-hidden="true">/</span> <span>{title}</span>
+      </p>
+      <h1>{title}</h1>
+      <p class="lead">{summary}</p>
+      <p class="meta">
+        <Dots items={[context, String(year)]} />
+      </p>
+    </header>
+
+    <div class="case-grid">
+      <aside class="rail">
+        <Toc headings={headings} />
+      </aside>
+      <div class="body">
+        <div class="prose has-margin">
+          <slot />
+        </div>
+        <VerifyList items={evidence} />
+        {next && (
+          <nav class="next" aria-label="Next case study">
+            <p class="meta">Next case study</p>
+            <a href={next.href}>{next.title}</a>
+          </nav>
+        )}
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .case {
+    padding-top: var(--space-7);
+  }
+  .case-head {
+    max-width: 52rem;
+  }
+  .crumb {
+    font-size: var(--text-sm);
+    color: var(--ink-3);
+    margin-bottom: var(--space-4);
+  }
+  .crumb a {
+    color: var(--ink-2);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+  }
+  .lead {
+    margin-top: var(--space-4);
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+  .case-head .meta {
+    margin-top: var(--space-4);
+  }
+  .case-grid {
+    margin-top: var(--space-7);
+    display: grid;
+    gap: var(--space-6);
+  }
+  .body {
+    container: case / inline-size;
+    min-width: 0;
+  }
+  .prose :global(.small) {
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    color: var(--ink-2);
+  }
+  .prose :global(.accounts) {
+    padding-left: 1.25em;
+  }
+  .prose :global(.accounts li + li) {
+    margin-top: var(--space-1);
+  }
+  .prose :global(> .spec) {
+    max-width: none;
+  }
+  .next {
+    margin-top: var(--space-9);
+    border-top: var(--hairline) solid var(--rule);
+    padding-top: var(--space-5);
+  }
+  .next a {
+    display: inline-block;
+    margin-top: var(--space-2);
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+  @media (min-width: 1100px) {
+    .case-grid {
+      grid-template-columns: 12rem minmax(0, 1fr);
+      gap: var(--space-8);
+    }
+    .body {
+      padding-right: 15.5rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .case-grid {
+      grid-template-columns: 13rem minmax(0, 1fr);
+    }
+  }
+</style>

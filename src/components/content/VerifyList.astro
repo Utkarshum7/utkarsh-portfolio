@@ -1,0 +1,60 @@
+---
+/** "How to verify this": each claim → its source, with human-readable labels. */
+import { getClaim } from '../../lib/claims';
+import ExtLink from './ExtLink.astro';
+
+interface Props {
+  items: { id: string; what: string }[];
+}
+const rows = await Promise.all(
+  Astro.props.items.map(async (i) => ({ what: i.what, claim: await getClaim(i.id) })),
+);
+---
+
+<section class="verify" aria-labelledby="how-to-verify">
+  <h2 id="how-to-verify">How to verify this</h2>
+  <dl>
+    {rows.map(({ what, claim }) => (
+      <div class="row">
+        <dt>{what}</dt>
+        <dd>
+          {claim.href ? <ExtLink href={claim.href}>{claim.label}</ExtLink> : <span>{claim.label}</span>}
+        </dd>
+      </div>
+    ))}
+  </dl>
+</section>
+
+<style>
+  .verify {
+    margin-top: var(--space-10);
+    border-top: var(--hairline) solid var(--rule-strong);
+    padding-top: var(--space-5);
+  }
+  h2 {
+    font-size: var(--text-lg);
+    line-height: var(--lh-lg);
+    letter-spacing: 0;
+  }
+  dl {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+  }
+  .row {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+    border-top: var(--hairline) solid var(--rule);
+  }
+  dd {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+  @media (min-width: 640px) {
+    .row {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+    }
+  }
+</style>

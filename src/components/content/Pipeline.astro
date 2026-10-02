@@ -1,0 +1,115 @@
+---
+/**
+ * Pipeline diagram as a semantic ordered list. The list *is* the text equivalent,
+ * so no separate "Diagram as text" is needed. Flows horizontally when there's room, vertically otherwise
+ * (container query), which gives the wide/narrow variants without duplicating markup.
+ */
+interface Step {
+  label: string;
+  detail?: string;
+  critical?: boolean;
+}
+interface Props {
+  caption: string;
+  steps: Step[];
+  figure?: number;
+}
+const { caption, steps, figure } = Astro.props;
+---
+
+<figure class="pipeline">
+  <div class="wrap">
+    <ol role="list">
+      {steps.map((s) => (
+        <li class:list={{ critical: s.critical }}>
+          <span class="label">{s.label}</span>
+          {s.detail && <span class="detail">{s.detail}</span>}
+        </li>
+      ))}
+    </ol>
+  </div>
+  <figcaption>
+    {figure ? `Fig. ${figure}. ` : ''}
+    {caption}
+  </figcaption>
+</figure>
+
+<style>
+  .pipeline {
+    margin-block: var(--space-6);
+    container-type: inline-size;
+  }
+  ol {
+    display: grid;
+    gap: var(--space-5);
+    counter-reset: step;
+    max-width: 28rem;
+  }
+  li {
+    position: relative;
+    counter-increment: step;
+    background: var(--surface);
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-1);
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
+    display: grid;
+    gap: var(--space-1);
+  }
+  li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--ink-3);
+  }
+  /* connector: vertical by default */
+  li + li::after {
+    content: '';
+    position: absolute;
+    left: var(--space-5);
+    top: calc(-1 * var(--space-5));
+    height: var(--space-5);
+    border-left: 1.5px solid var(--ink-3);
+  }
+  li.critical {
+    border-color: var(--accent);
+    border-width: 2px;
+  }
+  li.critical + li::after,
+  li:has(+ li.critical)::after {
+    border-color: var(--accent);
+  }
+  .label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ink);
+    line-height: var(--lh-sm);
+  }
+  .detail {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--lh-2xs);
+    color: var(--ink-3);
+  }
+  figcaption {
+    margin-top: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  /* Six steps don't fit side by side in a prose column; go horizontal only when there is real room */
+  @container (min-width: 60rem) {
+    ol {
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: var(--space-4);
+      max-width: none;
+    }
+    li + li::after {
+      left: calc(-1 * var(--space-4));
+      top: 50%;
+      width: var(--space-4);
+      height: 0;
+      border-left: 0;
+      border-top: 1.5px solid var(--ink-3);
+    }
+  }
+</style>

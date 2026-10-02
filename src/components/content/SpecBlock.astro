@@ -1,0 +1,48 @@
+---
+/** Spec block: a definition list at the top of every case study. Rows are <SpecRow> children. */
+---
+
+<dl class="spec">
+  <slot />
+</dl>
+
+<style>
+  .spec {
+    background: var(--surface);
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-2);
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  .spec :global(.spec-row) {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+  }
+  .spec :global(.spec-row + .spec-row) {
+    border-top: var(--hairline) solid var(--rule);
+  }
+  .spec :global(dt) {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--lh-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding-top: 0.2em;
+  }
+  .spec :global(dd) {
+    color: var(--ink);
+  }
+  .spec :global(dd > * + *) {
+    margin-top: var(--space-2);
+  }
+  @container case (min-width: 34rem) {
+    .spec :global(.spec-row) {
+      grid-template-columns: 8.75rem 1fr;
+      gap: var(--space-4);
+    }
+  }
+</style>

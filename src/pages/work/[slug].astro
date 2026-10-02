@@ -1,0 +1,41 @@
+---
+import { getCollection, render } from 'astro:content';
+import CaseStudyLayout from '../../layouts/CaseStudyLayout.astro';
+import { resolveUrl } from '../../lib/urls';
+
+export async function getStaticPaths() {
+  const all = await getCollection('projects', (p) => p.data.caseStudy);
+  const sorted = all.sort((a, b) => a.data.order - b.data.order);
+  return sorted.map((entry, i) => {
+    const nextEntry = sorted[(i + 1) % sorted.length];
+    return {
+      params: { slug: entry.id },
+      props: {
+        entry,
+        next:
+          nextEntry && nextEntry.id !== entry.id
+            ? { href: `/work/${nextEntry.id}`, title: nextEntry.data.title }
+            : undefined,
+      },
+    };
+  });
+}
+
+const { entry, next } = Astro.props;
+const { Content, headings } = await render(entry);
+const d = entry.data;
+---
+
+<CaseStudyLayout
+  title={d.title}
+  summary={d.summary}
+  context={d.context}
+  year={d.year}
+  seo={d.seo!}
+  headings={headings}
+  evidence={d.evidence.map((e) => ({ id: e.claim.id, what: e.what }))}
+  repoUrl={d.links.repo ? resolveUrl(d.links.repo) : undefined}
+  next={next}
+>
+  <Content />
+</CaseStudyLayout>

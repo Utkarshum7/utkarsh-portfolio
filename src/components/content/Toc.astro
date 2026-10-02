@@ -1,0 +1,109 @@
+---
+/**
+ * Case-study table of contents: a disclosure on narrow screens, a sticky rail on wide ones.
+ * Built from the MDX headings (h2 only, to keep it short).
+ */
+import type { MarkdownHeading } from 'astro';
+import Icon from '../site/Icon.astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+const items = Astro.props.headings.filter((h) => h.depth === 2);
+---
+
+<nav class="toc" aria-label="On this page">
+  <details data-toc>
+    <summary>
+      <span>On this page</span>
+      <Icon name="chevron-down" size={16} class="chev" />
+    </summary>
+    <ol role="list">
+      {items.map((h) => (
+        <li>
+          <a href={`#${h.slug}`}>{h.text}</a>
+        </li>
+      ))}
+      <li>
+        <a href="#how-to-verify">How to verify this</a>
+      </li>
+    </ol>
+  </details>
+</nav>
+
+<style>
+  .toc {
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+  }
+  summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--target);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: var(--hairline) solid var(--rule);
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary :global(.chev) {
+    transition: transform var(--dur-disclosure) var(--ease);
+  }
+  details[open] summary :global(.chev) {
+    transform: rotate(180deg);
+  }
+  ol {
+    padding-block: var(--space-2);
+  }
+  li a {
+    display: flex;
+    align-items: center;
+    min-height: 2.25rem;
+    color: var(--ink-2);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    padding-left: var(--space-3);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    li a:hover {
+      color: var(--ink);
+      border-left-color: var(--rule-strong);
+    }
+  }
+  @media (min-width: 1100px) {
+    .toc {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-5));
+      max-height: calc(100vh - var(--header-h) - var(--space-8));
+      overflow-y: auto;
+    }
+    summary {
+      pointer-events: none;
+    }
+    summary :global(.chev) {
+      display: none;
+    }
+    li a {
+      min-height: 1.75rem;
+      padding-block: var(--space-1);
+    }
+  }
+</style>
+
+<script>
+  // Open the disclosure on wide screens (sticky rail); keep it collapsed on narrow ones.
+  const toc = document.querySelector<HTMLDetailsElement>('details[data-toc]');
+  const wide = matchMedia('(min-width: 1100px)');
+  const sync = () => {
+    if (toc && wide.matches) toc.open = true;
+  };
+  sync();
+  wide.addEventListener('change', sync);
+</script>

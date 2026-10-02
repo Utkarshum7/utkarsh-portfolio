@@ -1,0 +1,233 @@
+---
+title: ScopeTrace
+tier: flagship
+order: 1
+caseStudy: true
+year: 2026
+context: Independent project
+summary: Emissions accounting where AI can explain the numbers but is designed and tested never to change them.
+problem: Turn fuel, electricity and travel data into auditable CO₂e reports. Deterministic calculation, an approval workflow and a tamper-evident audit log come first; five AI features sit behind one gateway that enforces policy, budget and data egress.
+stackLine: Django · Celery · PostgreSQL · React
+links:
+  repo: repo:scopetrace
+  live: https://scopetrace-platform.vercel.app/
+chips: [st.tests.backend, st.live.fe, st.adrs]
+evidence:
+  - { claim: st.tests.backend, what: '937 backend tests and 13 AI-evaluation tests' }
+  - { claim: st.tests.frontend, what: '95 frontend tests' }
+  - { claim: st.gateway, what: 'The gateway and its ordered steps' }
+  - { claim: st.importguard, what: 'The import guard and its scope' }
+  - { claim: st.invariants, what: 'Per-feature "no mutation" and tenant-context tests' }
+  - { claim: st.races, what: 'Budget concurrency tests' }
+  - { claim: st.idempotency, what: 'Idempotency concurrency tests' }
+  - { claim: st.hashchain, what: 'The audit hash chain' }
+  - { claim: st.demomode, what: 'Demo mode' }
+  - { claim: st.adrs, what: 'All design decisions' }
+  - { claim: st.live.fe, what: 'The live demo' }
+  - { claim: st.live.be, what: 'API health' }
+seo:
+  title: 'ScopeTrace: governed AI for emissions reporting · Utkarsh Amaresh'
+  description: How I built an emissions-reporting platform where AI can explain the data but is designed and tested never to change it.
+---
+
+import SpecBlock from '../../components/content/SpecBlock.astro';
+import SpecRow from '../../components/content/SpecRow.astro';
+import Claim from '../../components/content/Claim.astro';
+import ExtLink from '../../components/content/ExtLink.astro';
+import Decision from '../../components/content/Decision.astro';
+import Note from '../../components/content/Note.astro';
+import ScopeTraceSystem from '../../components/diagrams/ScopeTraceSystem.astro';
+
+<SpecBlock>
+  <SpecRow label="Problem">Turn emissions data from fragmented enterprise sources into CO₂e reports an auditor can trust, and add AI assistance without letting it alter governed records.</SpecRow>
+  <SpecRow label="Context">
+    <p><Claim id="st.origin" /></p>
+    <p class="small">The public history includes an early commit titled <ExtLink href="https://github.com/Utkarshum7/scopetrace-platform/commit/aea4951058221ff576d72a49155ba7f9f60e5bfb">“release: final internship assignment submission”</ExtLink> (29 May 2026). Development continued through July.</p>
+  </SpecRow>
+  <SpecRow label="My role"><Claim id="role.solo" /></SpecRow>
+  <SpecRow label="Timeframe">May – July 2026</SpecRow>
+  <SpecRow label="Status">Demo deployment: web app on Vercel; API and PostgreSQL on Northflank in demo mode <Claim id="st.live.be" marker={true}>(health checks respond)</Claim>.</SpecRow>
+  <SpecRow label="Version described"><code>main</code> at commit <ExtLink href="https://github.com/Utkarshum7/scopetrace-platform/tree/d945ad93826561fb9e840d9b85f429ecf404d3a6"><code>d945ad9</code></ExtLink>, CI-tested 14 Jul 2026</SpecRow>
+  <SpecRow label="Built with">API: Django 6, Django REST Framework · Background work: Celery, Redis · Data: PostgreSQL 16, S3-compatible object storage · Web: React 18, Vite, TanStack Query · AI: one gateway with Anthropic and OpenAI adapters and a deterministic demo provider · Delivery: Docker Compose, GitHub Actions</SpecRow>
+  <SpecRow label="Links"><ExtLink href="https://scopetrace-platform.vercel.app/">Live demo</ExtLink> · <ExtLink href="https://github.com/Utkarshum7/scopetrace-platform/tree/d945ad93826561fb9e840d9b85f429ecf404d3a6">Source at d945ad9</ExtLink> · <ExtLink href="https://github.com/Utkarshum7/scopetrace-platform/tree/d945ad93826561fb9e840d9b85f429ecf404d3a6/docs/adr">Design decision records</ExtLink></SpecRow>
+  <SpecRow label="Try it">
+    <p>The demo's sign-in page lists its demo accounts <Claim id="st.demo.login" marker={true}>publicly</Claim>. Two are useful here, both with password <code>demo12345</code>:</p>
+    <ul class="accounts">
+      <li><code>analyst</code>: upload one of the <Claim id="st.samples">sample files</Claim> and follow it through validation, calculation and approval.</li>
+      <li><code>auditor</code>: approve records and verify the audit log.</li>
+    </ul>
+    <p class="small">It's a shared demo, so other visitors can see anything you upload. The API runs on a free tier and may take a moment to wake.</p>
+  </SpecRow>
+</SpecBlock>
+
+## Summary
+
+ScopeTrace ingests fuel, electricity and travel data, validates it, and computes CO₂e with a deterministic engine. Records move through an approval workflow, and changes are written to a per-organisation, hash-chained audit log. On top sit five AI features (anomaly explanations, emission-factor suggestions, validation help, a Q&A assistant and report narration), and every one of them goes through a single gateway that enforces policy, budget and data egress. The AI can read and explain the numbers; it is designed, and tested per feature, never to change them. <Claim id="st.tests.backend" sidenote /> run in CI against real PostgreSQL and Redis.
+
+## The problem and its constraints
+
+Companies report greenhouse-gas emissions from data that lives in different systems: fuel purchases exported from an ERP as CSV, electricity from utility bills, business travel from a booking tool as JSON. Units differ (litres, kWh, passenger-kilometres), values are sometimes wrong, and the final numbers have to survive an audit.
+
+That set the constraints:
+
+- **Reproducible numbers.** The same input and emission factors must always give the same CO₂e, and it must be possible to show how a number was produced.
+- **Accountable changes.** Who changed a record, when and why must be recorded so that silent edits are detectable.
+- **Tenant isolation.** Several organisations share one deployment; no query may cross an organisation boundary.
+- **AI that helps without deciding.** Explaining an anomaly or suggesting an emission factor is useful. A model silently changing a reported figure is not acceptable.
+- **Free hosting for the demo.** The designed architecture needs background workers; free tiers don't provide them.
+
+## The system at a glance
+
+<ScopeTraceSystem figure={1} />
+
+Following one upload through the system:
+
+1. **Upload.** An analyst uploads a CSV. The API stores the file in S3-compatible storage and records an upload batch.
+2. **Parse and validate.** A background task uses the parser for that source (one class per format) and checks structure, types, ranges and anomalies row by row. A bad row is flagged; it doesn't fail the batch.
+3. **Calculate.** A second task computes CO₂e for each valid row from versioned, date-effective emission factors, pins the factor it used, and stores a calculation trace.
+4. **Review and approve.** Records move Draft → Submitted → Approved or Rejected; each transition is permission-checked and written to the audit log.
+5. **Audit.** Each audit entry's hash covers its content and the previous entry's hash, so the chain can be re-verified on demand.
+6. **Advise, when enabled.** <Claim id="st.ai.dispatch">Separately from that chain, AI tasks are dispatched fire-and-forget</Claim>: anomaly explanations and validation help after ingestion, factor suggestions after calculation. They go through the gateway and write only annotations.
+
+## Where deterministic code decides
+
+Everything that ends up in a report is produced by ordinary, testable code:
+
+- **Ingestion:** each source format has its own parser behind a common interface, so adding a source doesn't change the orchestration code.
+- **Calculation:** decimal arithmetic over versioned, date-effective emission factors; the factor used is pinned to the result and a trace records how it was computed, so a later factor update doesn't silently change an old figure.
+- **Workflow:** the Draft → Submitted → Approved/Rejected state machine is <Claim id="st.workflow">enforced at the model layer</Claim>; approved records are locked against business-field edits; deletes are reversible soft deletes; bulk updates that would bypass validation and auditing are blocked.
+- **Audit:** a <Claim id="st.hashchain" />, with an endpoint that recomputes and verifies it.
+
+## Where AI is used, and why only there
+
+| Feature | What it produces | Who acts on it |
+|---|---|---|
+| Anomaly explanation | Why a flagged value might be wrong | Analyst |
+| Emission-factor suggestion | A candidate factor with reasoning | Analyst, through the normal recalculation path |
+| Validation assistance | How to fix a failed row | Analyst |
+| ESG assistant | Answers about the organisation's own data | Permitted users |
+| Report narration | A written summary of an approved compliance report | Auditor or admin |
+
+<Claim id="st.advisory">AI output is stored as annotations alongside records, not in them.</Claim> AI is **off by default**; enabling it is an explicit per-organisation decision.
+
+<Decision>
+
+## Decision: one gateway for every AI call
+
+**Context.** Five features, two vendor SDKs, per-organisation budgets and data-egress rules. If each feature called a provider directly, each rule would need re-implementing and could be forgotten.
+
+**Chose.** One function, `invoke_ai()`, through which AI calls go. <Claim id="st.gateway">It runs the same ordered steps each time</Claim>:
+
+1. Idempotency: if this exact request already succeeded, return the stored result.
+2. Policy: is AI enabled globally and for this organisation?
+3. Take a per-organisation lock (explained under "The hard part" below).
+4. Budget: refuse before spending anything if the monthly budget would be exceeded.
+5. Egress: is this provider allowed under the organisation's data tier (raw, redacted, or no egress)?
+6. Resolve the response schema, redact inputs where required, render the prompt.
+7. Call the provider.
+8. Validate the response against its schema and write an immutable interaction record.
+
+**Rejected.** Per-feature provider calls with shared helpers: less code up front, but nothing stops a new feature from skipping the budget or egress step.
+
+**Consequence.** Budget, policy and audit are handled in one place, and cost and usage dashboards are built from the records the gateway already writes.
+
+**Guarding against one bypass.** A feature could skip the gateway by calling a vendor SDK directly. A test guards that route inside the AI package: it parses every Python file in the package and fails if the `anthropic` or `openai` packages are imported anywhere except their two adapter modules. A second test checks those adapter files still exist, so the guard can't pass by scanning nothing. <Claim id="st.importguard">It runs in the blocking CI job.</Claim>
+
+What that test does **not** cover: code outside the AI package, imports done dynamically at runtime, direct HTTP calls to a provider's API, or other vendors' SDKs.
+
+</Decision>
+
+<Decision>
+
+## Decision: advisory by design, checked by tests
+
+**Context.** "The AI must never change a reported figure" could be a convention people remember, or something the code and tests hold to.
+
+**Chose.** The AI package reads emission records to build context, and stores its output as separate annotations. If a suggestion should become real data, a person applies it through the same workflow and recalculation paths as any human change.
+
+**Rejected.** A runtime check that blocks "AI-initiated" writes (every save path would need to know about AI, and a new path could forget it), and a permission rule (doesn't cover background tasks).
+
+**Consequence.** For each of the five features, an invariant test runs it and asserts that governed records are unchanged. Related tests assert that the assistant's and report narrator's context never includes another organisation's data. <Claim id="st.invariants" sidenote>These run in the blocking CI job.</Claim>
+
+</Decision>
+
+## The hard part: budgets that hold under concurrency
+
+{/* claim-exempt: "$4 of a $5" is an illustrative example, not a measurement */}
+A budget check that reads "$4 of a $5 monthly budget spent", then calls the provider, then records the cost, can be raced: two requests both read "under budget" and both spend. The same gap lets two identical requests pay twice. (Budgets are <Claim id="st.budget.usd" marker={true}>monthly, per organisation</Claim>.)
+
+**What I did.** The gateway takes a row lock on the organisation's AI policy (`SELECT … FOR UPDATE`) and holds it across budget check → provider call → write. Calls for one organisation are serialised; different organisations don't wait on each other. The idempotency lookup is repeated inside the lock, so a duplicate that waited finds the committed result.
+
+**How it's tested.** <Claim id="st.races" sidenote>Multi-threaded tests</Claim> send concurrent calls for one organisation and assert that the budget is not exceeded and that <Claim id="st.idempotency" />. The same approach tests approvals, soft delete, versioning and audit appends.
+
+**Trade-off.** The lock does nothing on SQLite, so these guarantees hold only on PostgreSQL. That's one reason CI runs the suite against PostgreSQL 16 and Redis 7 containers. Serialising per organisation also limits AI throughput per tenant: acceptable for advisory features, wrong for anything latency-critical.
+
+## Governance: tamper-evident, not tamper-proof
+
+Each audit entry stores a SHA-256 hash of its canonical content and the previous entry's hash. <Claim id="st.hashchain">Verification recomputes the chain in order</Claim> and reports the first entry that doesn't match. Editing or deleting a past entry, through the application or directly in the database, breaks the chain and is detected.
+
+What it doesn't do: someone with full database access could rebuild the whole chain consistently. Preventing that needs the latest hash anchored outside the database, which ScopeTrace doesn't do. So I call it tamper-evident.
+
+## Testing and CI
+
+| Suite | Count | Where it runs |
+|---|---|---|
+| Backend tests | <Claim id="st.tests.backend" /> | GitHub Actions, against PostgreSQL 16 and Redis 7 service containers |
+| AI evaluation tests | <Claim id="st.tests.ai" /> | Separate, non-blocking CI job |
+| Frontend tests | <Claim id="st.tests.frontend" /> | Vitest and React Testing Library |
+
+Each push runs four workflows: backend (tests, migration check, lint, dependency audit), frontend, Docker image build, and a secret scan over the full history. <Claim id="st.ci">All four passed on commit d945ad9.</Claim>
+
+## Evaluating the AI layer
+
+The evaluation harness checks the system's guarantees around the AI: responses validated against schemas, no mutation, no cross-organisation context, deterministic replay of recorded responses, and <Claim id="st.golden" />. An LLM-as-judge framework exists for scoring answer quality but is disabled by default.
+
+The harness in the repository doesn't score **answer quality from a real model**; the public demo uses a deterministic, zero-network provider. I have <Claim id="st.eval.real" />, but those results aren't published in the repository, so I don't quote scores here.
+
+## Running it: deployment and operations
+
+**Designed topology:** API (gunicorn), Celery workers on <Claim id="st.queues">dedicated queues</Claim>, a single scheduler, PostgreSQL, Redis and object storage, reproducible locally with Docker Compose; a Render Blueprint describes the same topology.
+
+**Demo topology:** free tiers don't offer always-on background workers, so I added a demo mode. <Claim id="st.demomode">One setting makes the same task chain run in-process</Claim> during the upload request instead of on a worker, with no call-site changes. The worker health endpoint reports `mode: demo` instead of failing. The web app is on Vercel; the API and database run on Northflank.
+
+**Observability:** each request gets a <Claim id="st.obs">correlation ID</Claim> that is attached to its log output and returned in a response header; <Claim id="st.health" /> cover the database, the worker and scheduler, and the AI layer; the gateway logs its governance decisions.
+
+## Debugging: the assistant that always said nothing
+
+In demo mode the ESG assistant returned an empty answer every time, with HTTP 200 and nothing useful in the logs.
+
+- **Why it was invisible:** the gateway deliberately didn't log the "AI disabled" outcome, which would fire for every uploaded row. A disabled call looked like a success with no content.
+- **Finding it:** stage-by-stage logging along the assistant path (view → service → gateway policy → provider) showed two independent causes.
+- **Cause 1:** the demo organisation had no AI policy, so AI resolved to disabled.
+- **Cause 2:** even when enabled, the demo's placeholder provider returned text that failed the assistant's response schema, and the gateway rejected it, as designed.
+- **Fix:** <Claim id="st.debug.esg">a deterministic, zero-network demo provider</Claim> that returns schema-valid answers, and a seeded demo policy with AI enabled and **no data egress**, so no vendor can be called even if configuration changes later; tests cover the provider and the full gateway path.
+
+**Lesson:** a governance layer should fail closed, and it also has to say why. Silent refusals cost more debugging time than loud ones.
+
+## What the evidence shows, and what it doesn't
+
+**Shows**
+
+- A deployed, working system: <Claim id="st.live.fe">a live web app</Claim> and <Claim id="st.live.be">a healthy API with database</Claim>.
+- <Claim id="st.tests.backend" marker={false} /> and <Claim id="st.tests.frontend" marker={false} /> passing in CI on the described commit.
+- <Claim id="st.adrs" /> with alternatives and consequences.
+- AI governance expressed in code and tests: the gateway, the import-guard test (within its scope), and per-feature invariant tests.
+
+**Doesn't show**
+
+- Real users or production load; it has neither.
+- Answer quality from a real model (see "Evaluating the AI layer").
+- The worker-based topology running in the cloud; the public demo runs in demo mode.
+- Emission factors fit for real reporting: the bundled factors are <Claim id="st.factors" />.
+
+## What I'd keep, and what I'd change
+
+**Keep:** deterministic core first; one gateway; AI output as separate annotations; concurrency tests on the real database.
+
+**Change next:**
+
+- Extend the import guard beyond the AI package, and add a check for direct HTTP calls to provider APIs.
+- Anchor the audit chain's latest hash outside the database.
+- Run the golden sets against a real provider and publish quality scores next to the invariants.
+- Add traces and metrics once there's a real workload to observe.
+- Update the advisory-AI decision record so its wording matches the code: the AI package reads records it doesn't write.

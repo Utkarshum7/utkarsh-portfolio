@@ -1,0 +1,150 @@
+---
+title: Delta Support Intelligence
+tier: flagship
+order: 2
+caseStudy: true
+year: 2026
+context: Technical assessment
+summary: A support agent that was evaluated before it was trusted.
+problem: Classifies airline customer-support messages, drafts replies grounded in past answers, and decides when a person must take over. Built around its evaluation, with a leakage-safe split, two baselines and a set of human-reviewed test examples.
+cardNote: Built on a public Twitter customer-support dataset; not affiliated with Delta Air Lines.
+stackLine: Python · scikit-learn
+links:
+  repo: repo:delta
+  live: https://delta-support-intelligence-demo.onrender.com/
+  liveNote: free tier, may take a minute to wake
+chips: [dsi.intent, dsi.golden.human, dsi.live]
+evidence:
+  - { claim: dsi.results, what: 'All metrics and both baselines' }
+  - { claim: dsi.golden.human, what: 'Golden set and label provenance' }
+  - { claim: dsi.split, what: 'The leakage-safe split' }
+  - { claim: dsi.failures, what: 'Failure modes and limitations' }
+  - { claim: dsi.license, what: 'Dataset and its license' }
+  - { claim: dsi.live, what: 'The running system' }
+seo:
+  title: 'Delta Support Intelligence: evaluating a support agent honestly · Utkarsh Amaresh'
+  description: A customer-support agent built around its evaluation, with a leakage-safe split, two baselines and 200 human-reviewed examples, and the weakness reported first.
+---
+
+import SpecBlock from '../../components/content/SpecBlock.astro';
+import SpecRow from '../../components/content/SpecRow.astro';
+import Claim from '../../components/content/Claim.astro';
+import ExtLink from '../../components/content/ExtLink.astro';
+import Pipeline from '../../components/content/Pipeline.astro';
+import SourceLine from '../../components/content/SourceLine.astro';
+import Note from '../../components/content/Note.astro';
+
+<SpecBlock>
+  <SpecRow label="Problem">Decide, for each customer-support message, what the customer wants, what a grounded reply looks like, and whether a person must take over, and prove how well that works.</SpecRow>
+  <SpecRow label="Context">Technical assessment (company not named)</SpecRow>
+  <SpecRow label="Timeframe">September 2026</SpecRow>
+  <SpecRow label="My role"><Claim id="role.solo" />; I also reviewed every golden-set label.</SpecRow>
+  <SpecRow label="Status"><Claim id="dsi.live">Live demo</Claim> on a free tier (may take a minute to wake). It runs offline: no LLM calls in the demo.</SpecRow>
+  <SpecRow label="Built with">Data: pandas, Parquet · Classification: TF-IDF and logistic regression (scikit-learn) · Retrieval: TF-IDF cosine similarity · Policy: deterministic escalation rules · Evaluation: golden set, two baselines, pytest · Hosting: Render</SpecRow>
+  <SpecRow label="Data">
+    <p><Claim id="dsi.license">Customer Support on Twitter (Thought Vector), licensed CC BY-NC-SA 4.0</Claim>; @Delta conversations only.</p>
+    <p class="small">Used here for non-commercial research and portfolio purposes. Under that licence, anything derived from the dataset carries the same licence (ShareAlike) and no commercial rights. This project is not affiliated with Delta Air Lines.</p>
+  </SpecRow>
+  <SpecRow label="Links"><ExtLink href="https://delta-support-intelligence-demo.onrender.com/">Live demo</ExtLink> · <ExtLink href="https://github.com/Utkarshum7/hiver-sde-intern-assignment/tree/075c43e8a05e414e36fa4e4fa52c623009529034">Source</ExtLink> · <Claim id="dsi.failures">Full evaluation report</Claim></SpecRow>
+</SpecBlock>
+
+## Summary
+
+I built a support agent for airline customer messages (classify the intent, retrieve similar past answers, draft a grounded reply, decide on escalation) and spent most of the effort on measuring it. On 200 human-reviewed examples it reaches <Claim id="dsi.intent" sidenote /> against <Claim id="dsi.baseline" marker={false} />. The number I lead with is worse: **<Claim id="dsi.escalation" />**, meaning it handled <Claim id="dsi.fn" marker={false} /> on its own. This page is about how I got numbers I trust, and what they say.
+
+## The problem
+
+A support agent that answers confidently but hands off too rarely is worse than no agent. So the questions were: *what does the customer want, can we answer from what the company has said before, and does a human need to take over?* Only the first two are about language. The third is a safety decision.
+
+## Data, and keeping the test honest
+
+- **Source:** the public *Customer Support on Twitter* dataset, filtered to one airline account. I rebuilt conversation threads from reply links: <Claim id="dsi.data" />.
+- **Split before anything else:** an 80/20 split **by conversation**, not by message, so no conversation contributes to both the retrieval index and the test pool. A message-level split would have let the agent "retrieve" the answer to the question it was being tested on. <Claim id="dsi.split">(Design notes.)</Claim>
+- **Taxonomy from the data:** <Claim id="dsi.taxonomy" />, from reading and clustering real messages rather than a guessed list.
+
+## The golden set: AI proposes, I decide
+
+The <Claim id="dsi.golden" /> was sampled from the held-out <Claim id="dsi.split" marker={false}>20%</Claim>, stratified across intents so rare but important intents (like lost baggage) are represented.
+
+Labelling used the same pattern as the rest of my work: **an AI proposed each label and I decided.** <Claim id="dsi.golden.human" sidenote>Of the 200 gold labels, I approved 85 AI proposals, corrected 109, and labelled 6 directly myself.</Claim> No proposal became a gold label without my review, and the high correction rate is itself a signal I wasn't rubber-stamping. The set was locked before the agent was evaluated, and <Claim id="dsi.gates" /> guard its integrity.
+
+## The agent
+
+<Pipeline
+  figure={1}
+  caption="The evaluated path. Classification and retrieval are statistical; escalation is deterministic rules."
+  steps={[
+    { label: 'Message', detail: 'one customer message' },
+    { label: 'Intent classifier', detail: 'TF-IDF · logistic regression' },
+    { label: 'Retrieval', detail: 'top 3 past answers' },
+    { label: 'Reply', detail: 'grounded, promise-stripped' },
+    { label: 'Escalation policy', detail: 'deterministic rules', critical: true },
+    { label: 'Result', detail: 'intent · reply · escalate · reason' },
+  ]}
+/>
+
+- **Intent:** TF-IDF features and logistic regression, trained on the development split with labels from a keyword heuristic (weak supervision), because there were no clean labels to train on.
+- **Retrieval:** TF-IDF cosine similarity over past customer-message and company-reply pairs from the development split only.
+- **Reply:** assembled from the retrieved evidence, with a check that strips promises the system can't keep (refunds, rebookings, account actions). No LLM was used in the evaluated path.
+- **Escalation:** deterministic rules: some intents always escalate; any account-specific signal (booking references, claim numbers) escalates regardless of intent.
+
+**Decision: rules for escalation, not a model.** Escalation is the safety-critical output. Rules are inspectable, testable, and fail in ways you can read. The evaluation shows their limit (coverage), which a person can fix directly from the failure list.
+
+## Results against baselines
+
+Measured once on the locked set, not tuned and re-run.
+
+{/* sourced: dsi.results */}
+| Metric (n = 200) | Agent | Retrieval-only baseline | Trivial baseline |
+|---|---:|---:|---:|
+| Intent accuracy | **56.5%** | 36.0% | 25.5% |
+| Intent macro-F1 | **58.3%** | 35.8% | 4.1% |
+| Escalation precision | 83.6% | 100% | 87.5% |
+| **Escalation recall** | **51.7%** | 12.4% | 23.6% |
+| Escalation F1 | **63.9%** | 22.0% | 37.2% |
+| Unsupported claims in replies | 0 of 200 | 0 of 200 | 0 of 200 |
+
+<SourceLine id="dsi.results" />
+
+The agent beats both baselines on every metric except escalation precision. The retrieval baseline's perfect precision comes from escalating almost nothing.
+
+## Where it fails
+
+From the actual predictions, the five largest failure modes:
+
+{/* sourced: dsi.failures */}
+1. **Escalation rules miss cases:** 44% of the missed escalations happened even when the intent was classified correctly. A rule-coverage gap, not a model problem.
+2. **Thanks and compliments get forced into service intents:** recall for general feedback is only 19.6%.
+3. **One intent is over-predicted 30×:** "flight status" was predicted far more often than it occurs (2 real cases), a direct result of noisy heuristic training labels.
+4. **The most severe intent is under-caught:** lost or damaged baggage has 46.7% recall.
+5. **Always-escalate intents over-trigger** on general policy questions (3 of the 9 false escalations).
+
+<SourceLine id="dsi.failures" />
+
+## What the headline number hides
+
+{/* sourced: dsi.results */}
+- The test set is **stratified, not representative of real traffic**, so 56.5% is not a production estimate in either direction.
+- Some per-intent numbers rest on tiny counts (one intent has 2 examples) and aren't stable.
+- Escalation F1 (63.9%) is a friendlier number than recall (51.7%). Recall is the one that matters, so it leads.
+- I reviewed every label, but reviewing AI proposals can still anchor the reviewer. The correction rate reduces that concern; it doesn't eliminate it.
+- "0 unsupported claims" is a narrow, mechanical check (no promised actions), not a measure of reply quality.
+
+## What isn't done
+
+- **LLM-as-judge scoring** of reply quality: harness built, **not run** (no API key during the assessment).
+- **Human agreement study:** rating sheet prepared, **none of it rated yet**.
+- No multi-turn handling; each message is classified alone. Retrieved answers reflect the dataset's period, not current policy.
+- It can't check flights, change bookings or issue refunds. All of those are escalated by design, and the recall figure shows escalation still misses too many.
+
+## What I'd do next
+
+1. Fix escalation-rule coverage using the review notes I already collected. That addresses the largest failure mode.
+2. Retrain intent classification on the corrected gold-style labels instead of heuristic labels.
+3. Run the LLM judge and the human-agreement study, and report them next to the existing numbers.
+
+## Lessons
+
+- Build the evaluation before trusting the system, and decide in advance which number matters.
+- A baseline turns a percentage into evidence; without one, an accuracy figure means little.
+- Report the weakness first. Anyone evaluating the work will find it anyway, and saying it first shows you understand the system.

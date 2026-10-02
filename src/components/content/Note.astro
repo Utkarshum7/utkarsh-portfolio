@@ -1,0 +1,37 @@
+---
+/** A plain, bordered aside for limitations and honest caveats. Never decorative. */
+interface Props {
+  label?: string;
+}
+const { label = 'Note' } = Astro.props;
+---
+
+<aside class="note" aria-label={label}>
+  <p class="label">{label}</p>
+  <div class="body">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .note {
+    border-left: 2px solid var(--rule-strong);
+    padding: var(--space-1) 0 var(--space-1) var(--space-4);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .body {
+    margin-top: var(--space-1);
+  }
+  .body > :global(* + *) {
+    margin-top: var(--space-2);
+  }
+</style>

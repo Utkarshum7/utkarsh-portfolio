@@ -1,0 +1,120 @@
+---
+title: AI Résumé Screener
+tier: flagship
+order: 3
+caseStudy: true
+year: 2026
+summary: The LLM reads the projects; Python computes the score.
+problem: Screens a folder of résumés for an AI engineering role. An LLM classifies how substantial each project is; plain Python applies the eligibility gate, computes every point of a 100-point score, and keeps rejected candidates with their reasons.
+stackLine: Python · Pydantic · Gemini
+links:
+  repo: repo:screener
+chips: [ars.what, ars.fallback]
+evidence:
+  - { claim: ars.what, what: 'Deterministic scoring' }
+  - { claim: ars.eligibility, what: 'The eligibility gate' }
+  - { claim: ars.fallback, what: 'Schema validation and fallback scoring' }
+  - { claim: ars.github, what: 'GitHub caching' }
+  - { claim: ars.rubric, what: 'Scoring rubric and penalties' }
+  - { claim: ars.run50, what: 'The 50-résumé run (totals only)' }
+  - { claim: ars.limits, what: 'Documented limitations' }
+seo:
+  title: 'AI Résumé Screener: LLM evidence, Python scores · Utkarsh Amaresh'
+  description: A résumé-screening pipeline where an LLM judges project depth and deterministic Python computes every score, with failures isolated per candidate.
+---
+
+import SpecBlock from '../../components/content/SpecBlock.astro';
+import SpecRow from '../../components/content/SpecRow.astro';
+import Claim from '../../components/content/Claim.astro';
+import ExtLink from '../../components/content/ExtLink.astro';
+import Pipeline from '../../components/content/Pipeline.astro';
+import SourceLine from '../../components/content/SourceLine.astro';
+
+<SpecBlock>
+  <SpecRow label="Problem">Shortlist candidates for an AI engineering role from a folder of résumés, without keyword gaming and without an LLM score nobody can audit.</SpecRow>
+  <SpecRow label="Timeframe">September 2026</SpecRow>
+  <SpecRow label="My role"><Claim id="role.solo" /></SpecRow>
+  <SpecRow label="Status">Command-line tool that runs locally. Synthetic sample résumés are included for trying it without real data.</SpecRow>
+  <SpecRow label="Built with">Parsing: pdfplumber, pypdf, python-docx · Validation: Pydantic · LLM: Gemini by default, Anthropic or OpenAI through one adapter · Enrichment: GitHub REST API · Output: JSON and a static HTML report · Tests: pytest, with external calls mocked</SpecRow>
+  <SpecRow label="Links"><ExtLink href="https://github.com/Utkarshum7/AI-resume-screener/tree/efb8949526b3545b194da14b175d38e1a3a73e22">Source</ExtLink></SpecRow>
+</SpecBlock>
+
+## Summary
+
+Keyword matching is easy to game: a résumé can list "LangChain" without ever having built anything with it. Asking an LLM for a score is hard to audit: you can't explain why one candidate got a slightly higher number than another. I split the job. **The LLM does the one thing a regex can't**, reading a project description and classifying how deep it really is, and **plain Python does everything else**: the eligibility gate, every point of the score, penalties, and the ranking. <Claim id="ars.what" sidenote>Every score is computed in Python.</Claim>
+
+## The split
+
+| Deterministic (Python) | Semantic (LLM) |
+|---|---|
+| File discovery, duplicate detection (SHA-256) | Reading project descriptions |
+| Text extraction and normalisation | Classifying each project: real implementation, thin wrapper, tutorial, or skill mention |
+| Name, email, GitHub and skills extraction | Summarising strengths and concerns |
+| The hard eligibility gate | — |
+| **All scoring and ranking** | — |
+
+The LLM is called once per candidate, **only for candidates who already passed the <Claim id="ars.eligibility">eligibility gate</Claim>**, and its answer must validate against a Pydantic schema before it is used. Rejected candidates stay in the output with explicit reasons; nobody silently disappears.
+
+<Pipeline
+  figure={1}
+  caption="One candidate's path. The LLM step is the only non-deterministic one, and it can fail without stopping the batch."
+  steps={[
+    { label: 'Ingest', detail: 'PDF/DOCX · duplicate hash' },
+    { label: 'Extract fields', detail: 'name · email · GitHub · skills' },
+    { label: 'Eligibility gate', detail: 'deterministic rules' },
+    { label: 'LLM analysis', detail: 'eligible only · schema-checked', critical: true },
+    { label: 'Score', detail: 'Python · fallback if LLM fails' },
+    { label: 'Rank and report', detail: 'JSON · static HTML' },
+  ]}
+/>
+
+## Scoring you can trace
+
+{/* sourced: ars.rubric */}
+| Category | Points |
+|---|---:|
+| AI, agentic and RAG project depth | 40 |
+| Python and backend engineering | 30 |
+| Cloud, deployment, full-stack | 15 |
+| GitHub activity | 10 |
+| Engineering depth (tests, concurrency, queues, containers) | 5 |
+
+<SourceLine id="ars.rubric" />
+
+{/* sourced: ars.rubric */}
+**Decision: shallow projects get the same base points, then a visible penalty.** A thin wrapper around an API is still an AI project, so it earns the base points, and then a separately recorded deduction (−10 for a thin wrapper, −8 for a tutorial-style project). The judgement shows up in the output as a named penalty instead of hiding inside a lower score.
+
+## The hard part: one failure costs one candidate, not the batch
+
+A batch job that calls two external services per candidate will hit failures: unreadable PDFs, truncated LLM JSON, timeouts, GitHub rate limits. Every stage that can fail writes a status onto that candidate's record instead of raising.
+
+{/* sourced: ars.rubric */}
+- **LLM call fails or returns invalid JSON:** <Claim id="ars.fallback">the candidate is scored with a deterministic fallback</Claim>, and the AI-depth category is capped at 24 of its 40 points because depth can't be judged from keywords alone.
+- **GitHub API:** rate-limit aware, with an <Claim id="ars.github">in-run cache</Claim> so the same profile is never fetched twice in one run.
+- **Tests** mock every external call and cover the failure paths.
+
+**Recovering hidden links.** Many résumé templates show "GitHub" as an icon with the URL stored only in the PDF's link annotations. Plain text extraction never sees it, so the pipeline reads PDF link annotations separately.
+
+## Results
+
+<Claim id="ars.run50" sidenote>In one run over 50 real PDF résumés, all 50 parsed and 33 passed the eligibility gate. Of the 33 LLM calls, 30 succeeded; the 3 failures (two truncated JSON responses, one timeout) were each confined to their own candidate, who was still scored by the deterministic fallback and ranked.</Claim> The résumés and outputs aren't published, because they contain personal information. These are totals from one run, not an accuracy measurement: there's no labelled ranking to compare against.
+
+## Limitations and fairness
+
+Automated screening affects people, so its limits belong on the page:
+
+{/* sourced: ars.limits */}
+- **Weights are not calibrated.** There is no labelled ranking set; the scoring weights and penalties are judgement, not fitted.
+- **Keyword-based eligibility** can miss candidates who describe their work in unusual words, and broad terms can match non-AI work.
+- **Parsing limits:** image-only PDFs aren't OCR'd; two-column headers can break name extraction; DOCX hyperlinks aren't read.
+- **Only the first 6,000 characters** of each résumé go to the LLM, and long responses can be truncated.
+- **Personal data** in the outputs has no access control; it's a local batch tool, not a service.
+- It's a shortlisting aid for a human reviewer, not a decision-maker. Every rejection carries a stated reason so a person can overrule it.
+
+<SourceLine id="ars.limits" />
+
+## Lessons
+
+- Put the model where judgement is needed and nowhere else; the rest should be code you can test.
+- Make the model's influence visible (named penalties, per-category scores) so a human can disagree with it specifically.
+- Design batch pipelines around partial failure from the start.
