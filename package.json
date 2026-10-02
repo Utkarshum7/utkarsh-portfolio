@@ -1,0 +1,45 @@
+{
+  "name": "utkarsh-amaresh-portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal portfolio of Utkarsh Amaresh (static Astro site).",
+  "scripts": {
+    "dev": "astro dev",
+    "lint:content": "node scripts/lint-content.mjs",
+    "check": "astro check",
+    "build:astro": "astro build",
+    "check:dist": "node scripts/check-dist.mjs",
+    "check:budgets": "node scripts/check-budgets.mjs",
+    "check:boundary": "node scripts/check-repo-boundary.mjs",
+    "build": "npm run lint:content && npm run check && npm run build:astro && npm run check:dist && npm run check:budgets",
+    "preview": "astro preview",
+    "test:unit": "node --test \"tests/unit/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "lhci": "lhci autorun --config=lighthouserc.cjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "og": "node scripts/og.mjs",
+    "status": "node scripts/check-status.mjs"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^8.0.2",
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "astro": "^7.3.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.13.0",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.63.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.1.0",
+    "typescript": "^6.0.3"
+  },
+  "allowScripts": {
+    "esbuild": false
+  }
+}
