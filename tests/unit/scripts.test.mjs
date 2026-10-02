@@ -119,7 +119,10 @@ test('check-dist fails on leaks into output', () => {
     'hidden repo': ['work.html', page('<a href="https://github.com/me/hidden-thing">x</a>')],
     'company in text': ['work.html', page('<p>Done for Acmecorp</p>')],
     'secret in js': ['_astro/a.js', 'const k="' + 'AKIA' + 'Y'.repeat(16) + '"'],
-    'private path in css': ['_astro/a.css', '/* ' + ['', 'Users', 'someone', 'project', 'x'].join('/') + ' */'],
+    'private path in css': [
+      '_astro/a.css',
+      '/* ' + ['', 'Users', 'someone', 'project', 'x'].join('/') + ' */',
+    ],
     'private literal': ['work.html', page('<p>see PRIVATE_PLAN_DOC</p>')],
     'draft marker': ['work.html', page('<p>[VERIFY: owner, x]</p>')],
     'unapproved email': ['work.html', page('<p>other@example.org</p>')],
