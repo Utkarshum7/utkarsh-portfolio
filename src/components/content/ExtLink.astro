@@ -1,0 +1,22 @@
+---
+/** External link: trailing arrow (decorative) + visually hidden "(external site)". Same tab. */
+import Icon from '../site/Icon.astro';
+interface Props {
+  href: string;
+  class?: string;
+  rel?: string;
+}
+const { href, class: className, rel } = Astro.props;
+---
+
+<a href={href} class:list={['ext', className]} rel={rel}>
+  <slot />
+  <Icon name="arrow-up-right" size={12} />
+  <span class="visually-hidden"> (external site)</span>
+</a>
+
+<style>
+  .ext :global(.icon) {
+    margin-left: 0.15em;
+  }
+</style>

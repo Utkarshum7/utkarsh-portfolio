@@ -1,0 +1,25 @@
+---
+/**
+ * A "·"-separated metadata line that wraps between items, never inside one, and never starts a line with a dot.
+ */
+interface Props {
+  items: (string | null | undefined | false)[];
+}
+const items = Astro.props.items.filter((i): i is string => Boolean(i));
+---
+
+{items.map((item, i) => (
+  <Fragment>
+    <span class="dot-item">
+      {item}
+      {i < items.length - 1 && ' ·'}
+    </span>
+    {i < items.length - 1 && ' '}
+  </Fragment>
+))}
+
+<style>
+  .dot-item {
+    white-space: nowrap;
+  }
+</style>

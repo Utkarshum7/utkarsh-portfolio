@@ -1,0 +1,162 @@
+---
+import { profile } from '../../data/profile';
+import Icon from './Icon.astro';
+import { canonicalPath } from '../../lib/urls';
+
+interface Props {
+  sticky?: boolean;
+}
+const { sticky = false } = Astro.props;
+const path = canonicalPath(Astro.url.pathname);
+const nav = [
+  { href: '/work', label: 'Work' },
+  { href: '/about', label: 'About' },
+];
+const isCurrent = (href: string) => path === href || path.startsWith(`${href}/`);
+---
+
+<header class:list={['site-header', { sticky }]}>
+  <div class="container bar">
+    <a class="name" href="/" aria-current={path === '/' ? 'page' : undefined}>
+      {profile.name}
+    </a>
+    <nav aria-label="Main">
+      <ul role="list">
+        {nav.map((item) => (
+          <li>
+            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          </li>
+        ))}
+        {profile.resume && (
+          <li>
+            <a href={profile.resume} download>
+              Résumé
+            </a>
+          </li>
+        )}
+      </ul>
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark theme" hidden>
+        <Icon name="moon" size={18} class="when-light" />
+        <Icon name="sun" size={18} class="when-dark" />
+      </button>
+    </nav>
+  </div>
+</header>
+
+<script>
+  // Progressive enhancement: the toggle is hidden until this runs; without JS the system theme applies.
+  const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+  const root = document.documentElement;
+  const effective = () =>
+    root.dataset.theme ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const label = () => {
+    if (!button) return;
+    const next = effective() === 'dark' ? 'light' : 'dark';
+    button.setAttribute('aria-label', `Switch to ${next} theme`);
+    button.dataset.current = effective();
+  };
+  if (button) {
+    button.hidden = false;
+    label();
+    button.addEventListener('click', () => {
+      const next = effective() === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch {
+        /* storage unavailable: choice lasts for this page only */
+      }
+      label();
+    });
+  }
+</script>
+
+<style>
+  .site-header {
+    border-bottom: var(--hairline) solid var(--rule);
+    background: var(--bg);
+  }
+  .site-header.sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .bar {
+    min-height: var(--header-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .name {
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+  @media (min-width: 480px) {
+    .name {
+      font-size: 1rem;
+    }
+  }
+  nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  ul {
+    display: flex;
+    gap: var(--space-1);
+    margin: 0;
+  }
+  nav a {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+    padding-inline: var(--space-2);
+    border-bottom: 2px solid transparent;
+  }
+  nav a[aria-current='page'] {
+    border-bottom-color: var(--accent);
+  }
+  .theme-toggle {
+    width: var(--target);
+    height: var(--target);
+    display: inline-grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-1);
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .theme-toggle[hidden] {
+    display: none;
+  }
+  .theme-toggle :global(.when-dark) {
+    display: none;
+  }
+  .theme-toggle[data-current='dark'] :global(.when-dark) {
+    display: block;
+  }
+  .theme-toggle[data-current='dark'] :global(.when-light) {
+    display: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    nav a:hover {
+      border-bottom-color: var(--rule-strong);
+    }
+    nav a[aria-current='page']:hover {
+      border-bottom-color: var(--accent);
+    }
+    .theme-toggle:hover {
+      color: var(--ink);
+    }
+  }
+</style>

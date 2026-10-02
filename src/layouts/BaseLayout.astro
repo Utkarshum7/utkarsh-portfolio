@@ -1,0 +1,75 @@
+---
+import '../styles/fonts.css';
+import '../styles/global.css';
+import plexSans400 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url';
+import plexSans600 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2?url';
+import plexMono400 from '@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url';
+import Seo from '../components/site/Seo.astro';
+import Header from '../components/site/Header.astro';
+import Footer from '../components/site/Footer.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  ogType?: 'website' | 'article' | 'profile';
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  stickyHeader?: boolean;
+  noindex?: boolean;
+}
+const { title, description, ogType, jsonLd, stickyHeader = false, noindex = false } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="generator" content={Astro.generator} />
+    <!-- Sets the chosen theme before first paint (no flash). Hash is allowed in public/_headers CSP. -->
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <!-- All three faces appear above the fold: fetch them together so they swap in once, not one by one -->
+    <link rel="preload" href={plexSans400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={plexSans600} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={plexMono400} as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <Seo title={title} description={description} ogType={ogType} jsonLd={jsonLd} noindex={noindex} />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <Header sticky={stickyHeader} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    left: var(--space-4);
+    top: -100px;
+    z-index: 100;
+    background: var(--surface);
+    color: var(--ink);
+    border: 2px solid var(--focus);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-1);
+  }
+  .skip-link:focus {
+    top: var(--space-2);
+  }
+  main:focus {
+    outline: none;
+  }
+</style>
