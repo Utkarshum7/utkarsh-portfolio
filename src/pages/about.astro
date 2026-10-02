@@ -1,0 +1,381 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Claim from '../components/content/Claim.astro';
+import ExtLink from '../components/content/ExtLink.astro';
+import CopyEmail from '../components/content/CopyEmail.astro';
+import CertList from '../components/content/CertList.astro';
+import Icon from '../components/site/Icon.astro';
+import portrait from '../assets/portrait/utkarsh-amaresh.jpg';
+import { profile } from '../data/profile';
+import { events } from '../data/events';
+import { getClaim } from '../lib/claims';
+
+// Rule R4: the owner-confirmed internship and AI statement must be registered claims.
+await getClaim('job.role');
+await getClaim('about.ai-statement');
+
+const areas = [
+  {
+    area: 'Backend services in Python',
+    detail: 'Django, Django REST Framework, FastAPI, PostgreSQL, Redis, Celery',
+    where: [
+      { label: 'ScopeTrace', href: '/work/scopetrace' },
+      { label: 'Appointment Board', href: '/work#more' },
+    ],
+  },
+  {
+    area: 'AI systems',
+    detail:
+      'an LLM gateway, schema-validated outputs, retrieval, evaluation against golden sets and baselines',
+    where: [
+      { label: 'ScopeTrace', href: '/work/scopetrace' },
+      { label: 'Delta Support Intelligence', href: '/work/support-intelligence' },
+      { label: 'AI Résumé Screener', href: '/work/resume-screener' },
+    ],
+  },
+  {
+    area: 'Correctness under concurrency',
+    detail: 'row locking, idempotency, multi-threaded tests',
+    where: [
+      { label: 'ScopeTrace', href: '/work/scopetrace#the-hard-part-budgets-that-hold-under-concurrency' },
+    ],
+  },
+  {
+    area: 'Delivery and operations',
+    detail: 'Docker, GitHub Actions CI, health checks, request correlation IDs, PaaS deployments',
+    where: [
+      { label: 'ScopeTrace', href: '/work/scopetrace#running-it-deployment-and-operations' },
+      { label: 'Appointment Board', href: '/work#more' },
+      { label: 'Edge Observability Stack', href: '/work#more' },
+    ],
+  },
+  {
+    area: 'Front-end when the product needs it',
+    detail: 'React, TypeScript, React Native',
+    where: [
+      { label: 'RoboFleet Monitor', href: '/work#more' },
+      { label: 'Taskora', href: '/work#more' },
+      { label: 'Apollo Family Clinic', href: '/work#more' },
+    ],
+  },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  mainEntity: {
+    '@type': 'Person',
+    name: profile.name,
+    jobTitle: 'Backend engineer',
+    address: { '@type': 'PostalAddress', addressLocality: 'Bengaluru', addressCountry: 'IN' },
+    alumniOf: { '@type': 'CollegeOrUniversity', name: 'RV College of Engineering' },
+    sameAs: [profile.github, profile.linkedin],
+  },
+};
+---
+
+<BaseLayout
+  title="About · Utkarsh Amaresh"
+  description="Backend engineer in Bengaluru working on Python services and AI systems: experience, credentials and how I work."
+  ogType="profile"
+  jsonLd={jsonLd}
+>
+  <article class="about container">
+    <header class="intro">
+      <Image
+        src={portrait}
+        alt="Utkarsh Amaresh"
+        width={160}
+        height={160}
+        widths={[160, 320]}
+        sizes="160px"
+        class="portrait"
+        loading="eager"
+      />
+      <div>
+        <h1>About</h1>
+        <div class="intro-text">
+          <p>
+            I'm {profile.name}, a backend engineer in Bengaluru. Most of my recent work is Python services
+            that store and move data carefully, and systems that use language models. What interests me is the
+            seam between the two: getting real value from a model without handing it decisions that code,
+            tests or a person should make.
+          </p>
+          <p>
+            I graduated from RV College of Engineering in 2026 and spent a year as a DevOps intern at
+            Octakaigon Bock, where I learned what software looks like when it's running in production and
+            something has gone wrong. I'm available immediately.
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <section class="section" aria-labelledby="experience">
+      <h2 class="section-label" id="experience">
+        Experience
+      </h2>
+      <h3>DevOps Intern, Octakaigon Bock Private Limited</h3>
+      <p class="when">Jun 2025 – May 2026</p>
+      <ul class="bullets">
+        <li>
+          Diagnosed and resolved production issues across AWS- and GCP-hosted backend APIs by analysing
+          application, HTTP/API, network and system logs, and restored reliability with root-cause fixes.
+        </li>
+        <li>
+          Deployed and maintained containerised backend services with Docker and Kubernetes, with Terraform
+          and GitHub Actions supporting repeatable, reversible infrastructure and CI/CD workflows.
+        </li>
+        <li>
+          Built Python automation for recurring diagnostics and operational tasks, and used Prometheus and
+          Grafana for service monitoring and reliability tracking.
+        </li>
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="education">
+      <h2 class="section-label" id="education">
+        Education
+      </h2>
+      <h3>Bachelor of Engineering (B.E.), RV College of Engineering</h3>
+      <p class="when">Bengaluru · Graduated 2026</p>
+    </section>
+
+    <section class="section" aria-labelledby="areas">
+      <h2 class="section-label" id="areas">
+        Technical areas
+      </h2>
+      <dl class="areas">
+        {areas.map((a) => (
+          <div class="area">
+            <dt>
+              <strong>{a.area}</strong>: {a.detail}
+            </dt>
+            <dd>
+              {a.where.map((w, i) => (
+                <>
+                  {i > 0 && ', '}
+                  <a href={w.href}>{w.label}</a>
+                </>
+              ))}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <section class="section" aria-labelledby="credentials">
+      <h2 class="section-label" id="credentials">
+        Credentials
+      </h2>
+      <CertList />
+    </section>
+
+    <section class="section" aria-labelledby="how-i-work">
+      <h2 class="section-label" id="how-i-work">
+        How I work
+      </h2>
+      <div class="principles">
+        <p>
+          <strong>AI proposes, code decides.</strong> When a model is part of a system, I give it the tasks
+          that need judgement or language and keep decisions, numbers and state changes in deterministic,
+          tested code. <a href="/work/scopetrace#decision-advisory-by-design-checked-by-tests">Example</a>
+        </p>
+        <p>
+          <strong>Measure, and say what the measurement hides.</strong> I decide which number matters before
+          seeing results, compare against a baseline, and write down the weaknesses first.{' '}
+          <a href="/work/support-intelligence#what-the-headline-number-hides">Example</a>
+        </p>
+        <p>
+          <strong>Build it to be operated.</strong> Health checks, useful logs and a deployment someone else
+          could reproduce are part of the work, not a later phase.{' '}
+          <a href="/work/scopetrace#running-it-deployment-and-operations">Example</a>
+        </p>
+      </div>
+      <h3 class="ai-heading" id="on-using-ai-tools">
+        On using AI tools
+      </h3>
+      <p class="ai">
+        <Claim id="about.ai-statement" marker={false}>
+          I use AI coding assistants as part of my everyday workflow: for drafting code, tests and
+          documentation, and for exploring alternatives quickly. I remain responsible for everything that
+          ships. I set the architecture and record design decisions, review each change, verify behaviour with
+          tests and CI rather than trusting output, and own the debugging, security choices, deployment and
+          final call on each decision.
+        </Claim>
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="events-about">
+      <h2 class="section-label" id="events-about">
+        Events &amp; hackathons
+      </h2>
+      <ul role="list" class="event-names">
+        {events.map((e) => (
+          <li>
+            <span class="event-name">{e.name}</span> <span class="when">{e.when}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="more">
+        <a href="/#events">
+          Details and photos <Icon name="arrow-right" size={14} />
+        </a>
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="contact">
+      <h2 class="section-label" id="contact">
+        Contact
+      </h2>
+      <p>The easiest way to reach me is e-mail.</p>
+      <ul role="list" class="contact">
+        <li>
+          <CopyEmail />
+        </li>
+        <li>
+          <ExtLink href={profile.linkedin} rel="me">
+            LinkedIn
+          </ExtLink>
+        </li>
+        <li>
+          <ExtLink href={profile.github} rel="me">
+            GitHub
+          </ExtLink>
+        </li>
+        {profile.resume && (
+          <li>
+            <a href={profile.resume} download>
+              Résumé (PDF)
+            </a>
+          </li>
+        )}
+      </ul>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .about {
+    padding-top: var(--space-8);
+  }
+  .intro {
+    display: grid;
+    gap: var(--space-5);
+    padding-bottom: var(--space-8);
+  }
+  .intro :global(.portrait) {
+    width: 160px;
+    height: 160px;
+    border-radius: var(--radius-1);
+    border: var(--hairline) solid var(--rule-strong);
+    object-fit: cover;
+  }
+  .intro-text {
+    margin-top: var(--space-5);
+    max-width: var(--measure);
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    color: var(--ink-2);
+  }
+  .intro-text p + p {
+    margin-top: var(--space-4);
+  }
+  @media (min-width: 720px) {
+    .intro {
+      grid-template-columns: 160px minmax(0, 1fr);
+      gap: var(--space-7);
+      align-items: start;
+    }
+  }
+  h3 {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+  }
+  .when {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .bullets {
+    margin-top: var(--space-4);
+    padding-left: 1.25em;
+    color: var(--ink-2);
+    max-width: var(--measure);
+    display: block;
+  }
+  .bullets li + li {
+    margin-top: var(--space-2);
+  }
+  .areas {
+    display: grid;
+  }
+  .area {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+    border-top: var(--hairline) solid var(--rule);
+  }
+  .area dt {
+    color: var(--ink-2);
+  }
+  .area dt strong {
+    color: var(--ink);
+  }
+  .area dd {
+    font-size: var(--text-sm);
+  }
+  @media (min-width: 1024px) {
+    .area {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: var(--space-6);
+    }
+  }
+  .principles {
+    display: grid;
+    gap: var(--space-4);
+    max-width: var(--measure);
+    color: var(--ink-2);
+  }
+  .principles strong {
+    color: var(--ink);
+  }
+  .principles a {
+    font-size: var(--text-sm);
+  }
+  .ai-heading {
+    margin-top: var(--space-7);
+  }
+  .ai {
+    margin-top: var(--space-3);
+    max-width: var(--measure);
+    color: var(--ink-2);
+  }
+  .event-names {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .event-name {
+    font-weight: 600;
+  }
+  .more a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+    font-size: var(--text-sm);
+  }
+  .contact {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-6);
+    align-items: center;
+  }
+  .contact :global(a) {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+</style>

@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found · Utkarsh Amaresh" description="This page doesn't exist." noindex>
+  <section class="container nf">
+    <p class="meta">404</p>
+    <h1>This page doesn't exist.</h1>
+    <p class="lead">It may have moved. The work is all reachable from these two pages:</p>
+    <ul role="list" class="links">
+      <li>
+        <a href="/work">Work</a>
+      </li>
+      <li>
+        <a href="/">Home</a>
+      </li>
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    padding-block: var(--space-10);
+  }
+  h1 {
+    margin-top: var(--space-4);
+  }
+  .lead {
+    margin-top: var(--space-4);
+    color: var(--ink-2);
+  }
+  .links {
+    margin-top: var(--space-4);
+    display: flex;
+    gap: var(--space-6);
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+</style>

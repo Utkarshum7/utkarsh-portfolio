@@ -1,0 +1,103 @@
+---
+/** Events & hackathons. Ruled rows; thumbnails where an approved photo exists. */
+import { Image, getImage } from 'astro:assets';
+import { events } from '../../data/events';
+import Claim from './Claim.astro';
+
+const rows = await Promise.all(
+  events.map(async (e) => ({
+    ...e,
+    large: e.photo ? await getImage({ src: e.photo.src, width: 1200, format: 'webp' }) : null,
+  })),
+);
+---
+
+<ul role="list" class="events">
+  {rows.map((e) => (
+    <li class:list={['event', { 'has-photo': Boolean(e.photo) }]}>
+      {e.photo && e.large && (
+        <a class="thumb" href={e.large.src} aria-label={`Larger photo: ${e.photo.alt}`}>
+          <Image
+            src={e.photo.src}
+            alt={e.photo.alt}
+            width={320}
+            height={240}
+            widths={[160, 320]}
+            sizes="(min-width: 640px) 160px, 96px"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+      )}
+      <div class="text">
+        <h3 class="name">{e.name}</h3>
+        <p class="when">
+          {e.when} · {e.where}
+        </p>
+        {e.what && <p class="what">{e.whatClaim ? <Claim id={e.whatClaim}>{e.what}</Claim> : e.what}</p>}
+        <p class="did">
+          <Claim id={e.didClaim} marker={false}>
+            {e.did}
+          </Claim>
+        </p>
+      </div>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .events {
+    display: grid;
+  }
+  .event {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+    border-top: var(--hairline) solid var(--rule);
+  }
+  .event.has-photo {
+    grid-template-columns: 6rem minmax(0, 1fr);
+  }
+  .thumb {
+    display: block;
+    align-self: start;
+  }
+  .thumb :global(img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-1);
+  }
+  .name {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+  }
+  .when {
+    margin-top: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .what {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+  .did {
+    margin-top: var(--space-2);
+    max-width: var(--measure);
+  }
+  @media (min-width: 640px) {
+    .event,
+    .event.has-photo {
+      grid-template-columns: 10rem minmax(0, 1fr);
+      gap: var(--space-5);
+    }
+    .event:not(.has-photo) .text {
+      grid-column: 2;
+    }
+  }
+</style>

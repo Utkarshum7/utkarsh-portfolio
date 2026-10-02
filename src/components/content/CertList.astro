@@ -1,0 +1,62 @@
+---
+/**
+ * Certifications. One link each: "Verify on Oracle" for issuer records, otherwise
+ * "View certificate" to a site-hosted copy, shown only if that file exists in public/ (drop-in structure).
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { certifications } from '../../data/certifications';
+import { getClaim } from '../../lib/claims';
+import ExtLink from './ExtLink.astro';
+
+const items = await Promise.all(
+  certifications.map(async (c) => {
+    await getClaim(c.claim); // rule R4: every certification must be a registered, publishable claim
+    const hasFile = c.file ? fs.existsSync(path.join(process.cwd(), 'public', c.file)) : false;
+    return { ...c, hasFile };
+  }),
+);
+---
+
+<ul role="list" class="certs">
+  {items.map((c) => (
+    <li>
+      <p class="name">{c.name}</p>
+      <p class="meta-line">
+        {c.issuer} · {c.dates}
+      </p>
+      {c.verifyUrl ? (
+        <ExtLink href={c.verifyUrl}>Verify on Oracle</ExtLink>
+      ) : c.hasFile ? (
+        <a href={c.file}>View certificate</a>
+      ) : null}
+    </li>
+  ))}
+</ul>
+
+<style>
+  .certs {
+    display: grid;
+    gap: var(--space-4);
+  }
+  li {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .name {
+    font-weight: 600;
+    line-height: var(--lh-sm);
+  }
+  .meta-line {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  li :global(a) {
+    font-size: var(--text-sm);
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+</style>

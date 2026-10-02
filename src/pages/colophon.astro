@@ -1,0 +1,84 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Claim from '../components/content/Claim.astro';
+import ExtLink from '../components/content/ExtLink.astro';
+---
+
+<BaseLayout
+  title="Colophon · Utkarsh Amaresh"
+  description="How this site is built: a static Astro site with typed content, self-hosted fonts, and accessibility, performance and evidence checks on every build."
+>
+  <article class="container colophon">
+    <h1>Colophon</h1>
+    <p class="lead">How this site is built, and the rules it holds itself to.</p>
+
+    <div class="prose">
+      <h2 id="architecture">Static first</h2>
+      <p>
+        The site is built with <ExtLink href="https://astro.build/">Astro</ExtLink> as plain static HTML.
+        There is no client framework: the only JavaScript is a few small scripts for the theme toggle, the
+        copy-email button and the case-study contents, and every page works without them.
+      </p>
+
+      <h2 id="content">Typed content</h2>
+      <p>
+        Pages are written in MDX and TypeScript in strict mode. Every number and strong claim is rendered from
+        one registry that records its source, and links to that source. The build checks the registry before
+        it publishes anything: a page that names a claim the registry doesn't have, or a claim without a
+        public source, stops the build.
+      </p>
+
+      <h2 id="type">Type and visuals</h2>
+      <p>
+        Set in IBM Plex Sans and IBM Plex Mono, self-hosted (no third-party font requests). Colours are a
+        small set of design tokens with light and dark themes; diagrams are hand-drawn SVG with a text version
+        for screen readers. Photos are real and cropped so the subject is me.
+      </p>
+
+      <h2 id="testing">Accessibility and testing</h2>
+      <p>
+        Every page is tested in a real browser at phone, tablet and desktop widths, in light and dark themes
+        and with reduced motion: automated accessibility checks, keyboard navigation, visible focus, heading
+        structure, and no horizontal scrolling. Lighthouse runs against the built site, and a separate scan of
+        the output makes sure nothing private, such as secrets, local file paths or unpublished project names,
+        ends up in what's deployed.
+      </p>
+
+      <h2 id="performance">Performance</h2>
+      <p>
+        Each page type has a byte budget for HTML, CSS, JavaScript, fonts and images, and the build fails if a
+        page goes over it. No analytics, trackers or third-party scripts are loaded.
+      </p>
+
+      <h2 id="ai">On using AI tools</h2>
+      <p>
+        <Claim id="about.ai-statement" marker={false}>
+          I use AI coding assistants as part of my everyday workflow: for drafting code, tests and
+          documentation, and for exploring alternatives quickly. I remain responsible for everything that
+          ships. I set the architecture and record design decisions, review each change, verify behaviour with
+          tests and CI rather than trusting output, and own the debugging, security choices, deployment and
+          final call on each decision.
+        </Claim>
+      </p>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .colophon {
+    padding-top: var(--space-8);
+  }
+  .lead {
+    margin-top: var(--space-4);
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+  .prose {
+    margin-top: var(--space-6);
+  }
+  .prose h2:first-child {
+    margin-top: 0;
+  }
+</style>
