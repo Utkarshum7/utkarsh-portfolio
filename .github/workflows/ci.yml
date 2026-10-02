@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Private validation data (blocklists) lives outside this repository; the scripts fail closed without it.
+  CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
+  SITE_URL: ${{ vars.SITE_URL }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run check:boundary
+      - run: npm run test:unit
+      # lint-content → astro check → astro build → check-dist → check-budgets
+      - run: npm run build
+        env:
+          REQUIRE_SITE_URL: ${{ vars.SITE_URL != '' && '1' || '' }}
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run lhci
+      - if: failure() || success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            playwright-report/
+            .lighthouseci/reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # The gates must actually fail: plant known violations and require each check to reject them.
+  negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Unresolved verification marker fails content lint
+        run: |
+          printf -- '---\ntitle: x\n---\nShipped in [VERIFY] weeks.\n' > src/content/projects/zz-planted.mdx
+          if npm run lint:content; then echo "lint passed a planted violation" && exit 1; fi
+          rm src/content/projects/zz-planted.mdx
+      - name: Unknown claim reference fails content lint
+        run: |
+          printf -- '<Claim id="does.not.exist" />\n' > src/pages/zz-planted.mdx
+          if npm run lint:content; then echo "lint passed a planted violation" && exit 1; fi
+          rm src/pages/zz-planted.mdx
+      - name: Secret-like string in output fails the dist check
+        run: |
+          npm run build:astro
+          echo "key=AKIA$(printf '0%.0s' {1..16})" > dist/planted.txt
+          if npm run check:dist; then echo "check-dist passed a planted secret" && exit 1; fi
+          rm dist/planted.txt
+      - name: Over-budget page fails the budget check
+        run: |
+          head -c 400000 /dev/urandom | base64 > dist/blob.txt
+          sed -i 's|</body>|<img src="/blob.txt" alt="x"></body>|' dist/about.html
+          if npm run check:budgets; then echo "check-budgets passed an over-budget page" && exit 1; fi
+      - name: Private file in the repository fails the boundary check
+        run: |
+          echo '# notes' > DECISIONS.md && git add DECISIONS.md
+          if npm run check:boundary; then echo "boundary check passed a private file" && exit 1; fi

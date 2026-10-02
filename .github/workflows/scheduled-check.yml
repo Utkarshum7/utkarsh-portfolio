@@ -1,0 +1,39 @@
+name: Running systems check
+
+# Once a day: check the deployed demos, alert (job failure → e-mail) if one is down in two consecutive checks,
+# then trigger a rebuild so the site's build-time snapshot is refreshed. The site never polls anything live.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # The previous snapshot is needed to detect "down twice in a row"
+      - uses: actions/cache@v4
+        with:
+          path: src/data/generated/status.json
+          key: status-${{ github.run_id }}
+          restore-keys: status-
+      - name: Check systems
+        id: status
+        run: node scripts/check-status.mjs --alert
+        continue-on-error: true
+      - name: Rebuild the site with a fresh snapshot
+        if: env.DEPLOY_HOOK_URL != ''
+        run: curl -fsS -X POST "$DEPLOY_HOOK_URL" > /dev/null
+      - name: Fail if a system was down in two consecutive checks
+        if: steps.status.outcome == 'failure'
+        run: exit 1
