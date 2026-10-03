@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+      # Only a boolean is exposed job-wide; the hook URL itself is available only to the one step that calls it.
+      HOOK_CONFIGURED: ${{ secrets.DEPLOY_HOOK_URL != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,8 +32,11 @@ jobs:
         id: status
         run: node scripts/check-status.mjs --alert
         continue-on-error: true
+      # Inactive until the DEPLOY_HOOK_URL secret is configured
       - name: Rebuild the site with a fresh snapshot
-        if: env.DEPLOY_HOOK_URL != ''
+        if: env.HOOK_CONFIGURED == 'true'
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
         run: curl -fsS -X POST "$DEPLOY_HOOK_URL" > /dev/null
       - name: Fail if a system was down in two consecutive checks
         if: steps.status.outcome == 'failure'

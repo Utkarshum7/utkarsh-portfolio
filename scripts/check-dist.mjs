@@ -137,7 +137,9 @@ if (isMain) {
     dist,
     governance,
     approvedEmails,
-    requireSite: process.argv.includes('--require-site') || Boolean(process.env.REQUIRE_SITE_URL),
+    requireSite:
+      process.argv.includes('--require-site') ||
+      ['1', 'true'].includes(String(process.env.REQUIRE_SITE_URL ?? '').toLowerCase()),
   });
   process.exit(report('check-dist', findings, `${files} files, routes: ${pages.join(' ')}`) ? 0 : 1);
 }

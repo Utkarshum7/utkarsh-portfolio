@@ -12,10 +12,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # Private validation data (blocklists) lives outside this repository; the scripts fail closed without it.
-  CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
-  SITE_URL: ${{ vars.SITE_URL }}
+# No secrets at workflow level: they are attached only to the steps that need them, so dependency install
+# scripts, browsers and third-party actions never see them.
+# CONTENT_GOVERNANCE_JSON (secret): private validation data; the scripts fail closed in CI without it.
+# SITE_URL (repository variable, not a secret): production origin; when set, builds require it to be valid.
 
 jobs:
   verify:
@@ -30,10 +30,14 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npm run check:boundary
+        env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
       - run: npm run test:unit
       # lint-content → astro check → astro build → check-dist → check-budgets
       - run: npm run build
         env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
+          SITE_URL: ${{ vars.SITE_URL }}
           REQUIRE_SITE_URL: ${{ vars.SITE_URL != '' && '1' || '' }}
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
@@ -59,17 +63,28 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # Without this precondition a missing secret would make every "must fail" step pass for the wrong reason.
+      - name: Governance data is available and a clean tree passes
+        env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
+        run: npm run check:boundary
       - name: Unresolved verification marker fails content lint
+        env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
         run: |
           printf -- '---\ntitle: x\n---\nShipped in [VERIFY] weeks.\n' > src/content/projects/zz-planted.mdx
           if npm run lint:content; then echo "lint passed a planted violation" && exit 1; fi
           rm src/content/projects/zz-planted.mdx
       - name: Unknown claim reference fails content lint
+        env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
         run: |
           printf -- '<Claim id="does.not.exist" />\n' > src/pages/zz-planted.mdx
           if npm run lint:content; then echo "lint passed a planted violation" && exit 1; fi
           rm src/pages/zz-planted.mdx
       - name: Secret-like string in output fails the dist check
+        env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
         run: |
           npm run build:astro
           echo "key=AKIA$(printf '0%.0s' {1..16})" > dist/planted.txt
@@ -80,7 +95,13 @@ jobs:
           head -c 400000 /dev/urandom | base64 > dist/blob.txt
           sed -i 's|</body>|<img src="/blob.txt" alt="x"></body>|' dist/about.html
           if npm run check:budgets; then echo "check-budgets passed an over-budget page" && exit 1; fi
+      - name: Production build without a valid SITE_URL fails
+        run: |
+          if REQUIRE_SITE_URL=1 npx astro build; then echo "build passed without SITE_URL" && exit 1; fi
+          if REQUIRE_SITE_URL=1 SITE_URL=http://localhost:4321 npx astro build; then echo "build passed with a local origin" && exit 1; fi
       - name: Private file in the repository fails the boundary check
+        env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
         run: |
           echo '# notes' > DECISIONS.md && git add DECISIONS.md
           if npm run check:boundary; then echo "boundary check passed a private file" && exit 1; fi
