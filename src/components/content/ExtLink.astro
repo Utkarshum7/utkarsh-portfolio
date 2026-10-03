@@ -1,5 +1,11 @@
 ---
-/** External link: trailing arrow (decorative) + visually hidden "(external site)". Same tab. */
+/**
+ * External link: trailing arrow (decorative) + visually hidden "(external site)". Same tab.
+ *
+ * When a label wraps, the arrow must stay attached to the last word instead of drifting to the far edge of a flex
+ * container. The last word and the arrow therefore form one non-breaking inline-block. An inline-block does not
+ * receive the link's underline, so the last word re-applies it and the arrow stays un-underlined, as before.
+ */
 import Icon from '../site/Icon.astro';
 interface Props {
   href: string;
@@ -7,16 +13,39 @@ interface Props {
   rel?: string;
 }
 const { href, class: className, rel } = Astro.props;
+const html = (await Astro.slots.render('default')).trim();
+// Split off a trailing plain-text word; labels that end in markup keep the arrow alone in the non-breaking unit
+const m = html.match(/^([\s\S]*\s)?([^\s<>]+)$/);
+const head = m ? (m[1] ?? '') : html;
+const word = m ? m[2] : '';
 ---
 
 <a href={href} class:list={['ext', className]} rel={rel}>
-  <slot />
-  <Icon name="arrow-up-right" size={12} />
+  <span class="label">
+    <Fragment set:html={head} />
+    <span class="tail">
+      {word && <span class="word">{word}</span>}
+      <Icon name="arrow-up-right" size={12} />
+    </span>
+  </span>
   <span class="visually-hidden"> (external site)</span>
 </a>
 
 <style>
+  .tail {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .word {
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .ext:hover .word {
+    text-decoration-thickness: 2px;
+  }
   .ext :global(.icon) {
-    margin-left: 0.15em;
+    margin-left: 0.25em;
+    vertical-align: -0.1em;
   }
 </style>

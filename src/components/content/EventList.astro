@@ -90,14 +90,11 @@ const rows = await Promise.all(
     margin-top: var(--space-2);
     max-width: var(--measure);
   }
+  /* Only rows with an approved photo reserve the thumbnail column; the rest use the full content width */
   @media (min-width: 640px) {
-    .event,
     .event.has-photo {
       grid-template-columns: 10rem minmax(0, 1fr);
       gap: var(--space-5);
-    }
-    .event:not(.has-photo) .text {
-      grid-column: 2;
     }
   }
 </style>

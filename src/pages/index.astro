@@ -41,8 +41,9 @@ const jsonLd = [
 >
   <!-- 1. Identity -->
   <section class="hero container" aria-labelledby="statement">
-    <p class="meta">
-      <Dots items={[profile.name, ...profile.roleLine.split(' · ')]} />
+    <p class="meta">{profile.name}</p>
+    <p class="role">
+      <Dots items={profile.roleLine.split(' · ')} />
     </p>
     <h1 id="statement">{profile.statement}</h1>
     <p class="lead">
@@ -238,6 +239,21 @@ const jsonLd = [
   @media (min-width: 1024px) {
     .hero {
       padding-block: var(--space-11) var(--space-10);
+    }
+  }
+  /* The job title: the first thing a recruiter looks for, kept well below the headline in size and weight */
+  .role {
+    margin-top: var(--space-2);
+    padding-left: var(--space-3);
+    border-left: 2px solid var(--accent);
+    font-size: var(--text-base);
+    line-height: var(--lh-md);
+    font-weight: 600;
+    color: var(--ink);
+  }
+  @media (min-width: 640px) {
+    .role {
+      font-size: var(--text-md);
     }
   }
   .hero h1 {

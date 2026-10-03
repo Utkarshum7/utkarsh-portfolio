@@ -11,7 +11,7 @@ const capId = 'fig-scopetrace-system';
 ---
 
 <figure class="diagram">
-  <svg class="wide" viewBox="0 0 820 250" role="img" aria-labelledby={capId}>
+  <svg class="wide" viewBox="0 0 880 250" role="img" aria-labelledby={capId}>
     <defs>
       <marker
         id="st-arrow"
@@ -38,98 +38,98 @@ const capId = 'fig-scopetrace-system';
     </defs>
 
     <!-- data group -->
-    <rect class="group" x="586" y="14" width="222" height="206" rx="2"></rect>
-    <text class="group-label" x="598" y="32">
+    <rect class="group" x="696" y="14" width="168" height="206" rx="2"></rect>
+    <text class="group-label" x="708" y="32">
       DATA
     </text>
 
     <!-- nodes -->
     <g class="node">
-      <rect x="16" y="40" width="140" height="56" rx="2"></rect>
-      <text x="30" y="64">
+      <rect x="14" y="40" width="148" height="56" rx="2"></rect>
+      <text x="28" y="64">
         Web app
       </text>
-      <text class="sub" x="30" y="82">
+      <text class="sub" x="28" y="82">
         React · Vite
       </text>
     </g>
     <g class="node">
-      <rect x="196" y="40" width="150" height="56" rx="2"></rect>
-      <text x="210" y="64">
+      <rect x="208" y="40" width="190" height="56" rx="2"></rect>
+      <text x="222" y="64">
         API
       </text>
-      <text class="sub" x="210" y="82">
+      <text class="sub" x="222" y="82">
         Django REST · gunicorn
       </text>
     </g>
     <g class="node">
-      <rect x="386" y="40" width="160" height="56" rx="2"></rect>
-      <text x="400" y="64">
+      <rect x="450" y="40" width="162" height="56" rx="2"></rect>
+      <text x="464" y="64">
         Workers
       </text>
-      <text class="sub" x="400" y="82">
+      <text class="sub" x="464" y="82">
         Celery · scheduler
       </text>
     </g>
     <g class="node critical">
-      <rect x="196" y="156" width="350" height="60" rx="2"></rect>
-      <text x="210" y="180">
+      <rect x="272" y="156" width="378" height="60" rx="2"></rect>
+      <text x="286" y="180">
         AI gateway: invoke_ai()
       </text>
-      <text class="sub" x="210" y="199">
+      <text class="sub" x="286" y="199">
         policy · budget · egress · schema · audit record
       </text>
     </g>
     <g class="node">
-      <rect x="16" y="158" width="140" height="56" rx="2"></rect>
-      <text x="30" y="182">
+      <rect x="14" y="158" width="212" height="56" rx="2"></rect>
+      <text x="28" y="182">
         Model providers
       </text>
-      <text class="sub" x="30" y="200">
+      <text class="sub" x="28" y="200">
         Anthropic · OpenAI · demo
       </text>
     </g>
     <g class="node">
-      <rect x="610" y="44" width="182" height="44" rx="2"></rect>
-      <text x="624" y="71">
+      <rect x="710" y="44" width="140" height="44" rx="2"></rect>
+      <text x="724" y="71">
         PostgreSQL
       </text>
     </g>
     <g class="node">
-      <rect x="610" y="102" width="182" height="44" rx="2"></rect>
-      <text x="624" y="122">
+      <rect x="710" y="102" width="140" height="44" rx="2"></rect>
+      <text x="724" y="122">
         Redis
       </text>
-      <text class="sub" x="624" y="138">
+      <text class="sub" x="724" y="138">
         broker · cache
       </text>
     </g>
     <g class="node">
-      <rect x="610" y="160" width="182" height="44" rx="2"></rect>
-      <text x="624" y="180">
+      <rect x="710" y="160" width="140" height="44" rx="2"></rect>
+      <text x="724" y="180">
         Object storage
       </text>
-      <text class="sub" x="624" y="196">
+      <text class="sub" x="724" y="196">
         S3-compatible
       </text>
     </g>
 
     <!-- edges -->
-    <path class="edge" d="M156 68H194" marker-end="url(#st-arrow)"></path>
-    <path class="edge" d="M346 68H384" marker-end="url(#st-arrow)"></path>
-    <text class="edge-label" x="350" y="60">
+    <path class="edge" d="M162 68H206" marker-end="url(#st-arrow)"></path>
+    <path class="edge" d="M398 68H448" marker-end="url(#st-arrow)"></path>
+    <text class="edge-label" x="402" y="60">
       tasks
     </text>
-    <path class="edge" d="M271 96V154" marker-end="url(#st-arrow)"></path>
-    <path class="edge" d="M466 96V154" marker-end="url(#st-arrow)"></path>
-    <path class="edge critical" d="M196 186H158" marker-end="url(#st-arrow-accent)"></path>
+    <path class="edge" d="M303 96V154" marker-end="url(#st-arrow)"></path>
+    <path class="edge" d="M531 96V154" marker-end="url(#st-arrow)"></path>
+    <path class="edge critical" d="M272 186H228" marker-end="url(#st-arrow-accent)"></path>
     <!-- data bus -->
-    <path class="edge" d="M271 40V22H572V182"></path>
-    <path class="edge" d="M546 68H572"></path>
-    <path class="edge" d="M546 186H572"></path>
-    <path class="edge" d="M572 66H608" marker-end="url(#st-arrow)"></path>
-    <path class="edge" d="M572 124H608" marker-end="url(#st-arrow)"></path>
-    <path class="edge" d="M572 182H608" marker-end="url(#st-arrow)"></path>
+    <path class="edge" d="M303 40V22H676V182"></path>
+    <path class="edge" d="M612 68H676"></path>
+    <path class="edge" d="M650 186H676"></path>
+    <path class="edge" d="M676 66H708" marker-end="url(#st-arrow)"></path>
+    <path class="edge" d="M676 124H708" marker-end="url(#st-arrow)"></path>
+    <path class="edge" d="M676 182H708" marker-end="url(#st-arrow)"></path>
   </svg>
 
   <svg class="narrow" viewBox="0 0 340 520" role="img" aria-labelledby={capId}>
@@ -276,13 +276,26 @@ const capId = 'fig-scopetrace-system';
     max-width: 26rem;
     margin-inline: auto;
   }
-  @container (min-width: 45rem) {
+  /* The prose column is 694px wide from 768px up (548px around 1100px). The wide variant is drawn on an 880-unit canvas,
+   so it needs about 690px to keep its labels near 10px: 43rem. Narrower columns use the vertical variant. */
+  @container (min-width: 43rem) {
     .wide {
       display: block;
     }
     .narrow {
       display: none;
     }
+  }
+  /* The wide canvas is scaled down to about 0.8x, so its labels are drawn larger than the vertical variant's */
+  .wide text {
+    font-size: 14px;
+  }
+  .wide text.sub {
+    font-size: 12px;
+  }
+  .wide .group-label,
+  .wide .edge-label {
+    font-size: 12px;
   }
   .node rect {
     fill: var(--surface);

@@ -7,12 +7,21 @@ interface Props {
   id: string;
 }
 const claim = await getClaim(Astro.props.id);
+// The last word and the arrow stay together when the chip text wraps
+const words = claim.chip.trim().split(/\s+/);
+const tail = words.pop() ?? '';
+const head = words.length ? words.join(' ') + ' ' : '';
 ---
 
 {claim.href ? (
   <a class="chip" href={claim.href} aria-label={`${claim.chip}, source: ${claim.label}`}>
-    <span>{claim.chip}</span>
-    <Icon name="arrow-up-right" size={12} />
+    <span class="chip-label">
+      {head}
+      <span class="tail">
+        {tail}
+        <Icon name="arrow-up-right" size={12} />
+      </span>
+    </span>
   </a>
 ) : (
   <span class="chip">{claim.chip}</span>
@@ -40,7 +49,12 @@ const claim = await getClaim(Astro.props.id);
   a.chip {
     color: var(--ink);
   }
+  .tail {
+    white-space: nowrap;
+  }
   a.chip :global(.icon) {
+    margin-left: 0.25em;
+    vertical-align: -0.1em;
     color: var(--accent);
   }
   @media (pointer: coarse) {

@@ -37,9 +37,9 @@ const meta = [String(index).padStart(2, '0'), d.context, 'Solo', String(d.year)]
           <Dots items={d.stackLine.split(' · ')} />
         </p>
       )}
+      <p class="summary">{d.summary}</p>
     </div>
     <div class="body">
-      <p class="summary">{d.summary}</p>
       {d.problem && <p class="problem">{d.problem}</p>}
       {d.cardNote && <p class="note">{d.cardNote}</p>}
       {d.chips.length > 0 && (
@@ -102,7 +102,9 @@ const meta = [String(index).padStart(2, '0'), d.context, 'Solo', String(d.year)]
     font-size: var(--text-xs);
     color: var(--ink-3);
   }
+  /* The claim sits under the title (left column on wide cards) so both columns carry weight */
   .summary {
+    margin-top: var(--space-4);
     font-size: var(--text-md);
     line-height: var(--lh-md);
     font-weight: 600;
@@ -110,7 +112,6 @@ const meta = [String(index).padStart(2, '0'), d.context, 'Solo', String(d.year)]
     max-width: 44ch;
   }
   .problem {
-    margin-top: var(--space-3);
     color: var(--ink-2);
     max-width: var(--measure);
   }
