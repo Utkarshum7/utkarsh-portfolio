@@ -301,3 +301,22 @@ test('status: snapshot validation hides malformed or stale data', () => {
     null,
   );
 });
+
+test('governance: a blank, malformed or hollow CI secret fails closed with a precise message', () => {
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'g-'));
+  const load = (value) => () =>
+    loadGovernance({ env: { CI: 'true', GOVERNANCE_DIR: cwd, CONTENT_GOVERNANCE_JSON: value }, cwd });
+  assert.throws(load(''), /set but empty/);
+  assert.throws(
+    load('{not json'),
+    (e) => /not valid JSON \(9 characters\)/.test(e.message) && !e.message.includes('{not json'),
+  );
+  assert.throws(load('{}'), /empty required lists/);
+  assert.throws(
+    load(JSON.stringify({ ...GOV, neverLink: { repos: [], projectNames: [] } })),
+    /neverLink\.repos/,
+  );
+  assert.throws(() => loadGovernance({ env: { CI: 'true', GOVERNANCE_DIR: cwd }, cwd }), /is not set/);
+  // A complete secret still loads
+  assert.equal(load(JSON.stringify(GOV))().source, 'secret');
+});

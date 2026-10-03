@@ -12,6 +12,7 @@
     "check:dist": "node scripts/check-dist.mjs",
     "check:budgets": "node scripts/check-budgets.mjs",
     "check:boundary": "node scripts/check-repo-boundary.mjs",
+    "governance:status": "node scripts/governance-status.mjs",
     "build": "npm run lint:content && npm run check && npm run build:astro && npm run check:dist && npm run check:budgets",
     "preview": "astro preview",
     "test:unit": "node --test \"tests/unit/*.test.mjs\"",

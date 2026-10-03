@@ -29,6 +29,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run format:check
+      # Proves the secret was received (counts only, never values) before anything depends on it
+      - run: npm run governance:status
+        env:
+          CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
       - run: npm run check:boundary
         env:
           CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
@@ -67,7 +71,9 @@ jobs:
       - name: Governance data is available and a clean tree passes
         env:
           CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
-        run: npm run check:boundary
+        run: |
+          npm run governance:status
+          npm run check:boundary
       - name: Unresolved verification marker fails content lint
         env:
           CONTENT_GOVERNANCE_JSON: ${{ secrets.CONTENT_GOVERNANCE_JSON }}
