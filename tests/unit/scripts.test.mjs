@@ -16,7 +16,10 @@ import { validateSnapshot } from '../../src/lib/status.ts';
 
 const GOV = {
   neverLink: { repos: ['hidden-thing'], projectNames: ['Nightjar'] },
-  unnamedCompanies: { names: ['Acmecorp'] },
+  unnamedCompanies: {
+    names: ['Acmecorp'],
+    allowedUrls: [{ url: 'https://acmecorp-demo.example.app/', company: 'Acmecorp', reason: 'test' }],
+  },
   privatePatterns: {
     literals: ['PRIVATE_PLAN_DOC'],
     allowedCredentials: [{ text: 'demoPW123', files: ['work/demo.html'] }],

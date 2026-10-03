@@ -45,7 +45,12 @@ export function lintContent({ root, governance, now = new Date() }) {
     findings.push(...R.findLiterals(text, governance.privatePatterns.literals, { file: r }));
     // R7 / R11 / R8
     findings.push(...R.findNeverLink(text, governance.neverLink, { file: r }));
-    findings.push(...R.findCompanies(text, governance.unnamedCompanies.names, { file: r }));
+    findings.push(
+      ...R.findCompanies(text, governance.unnamedCompanies.names, {
+        file: r,
+        allowedUrls: governance.unnamedCompanies.allowedUrls,
+      }),
+    );
   }
   return { findings, filesScanned: files.length, claims: entries.length };
 }

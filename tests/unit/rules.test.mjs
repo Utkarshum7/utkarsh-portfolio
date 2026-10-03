@@ -199,3 +199,54 @@ test('TYPO: words glued to inline elements fail; source markers and spaced text 
   assert.equal(R.findGluedInline('<p>I built <strong>ScopeTrace</strong>\n , an app</p>').length, 1);
   assert.equal(R.findGluedInline('<p>I built <strong>ScopeTrace</strong>, an app; 2 . 5</p>').length, 0);
 });
+
+test('R8: an explicitly allowlisted URL passes; unrelated company-name URLs and prose still fail', () => {
+  const names = ['Acmecorp', 'Globex'];
+  const allowedUrls = [{ url: 'https://acmecorp-demo.example.app/', company: 'Acmecorp', reason: 'test' }];
+  const find = (text) => R.findCompanies(text, names, { allowedUrls });
+  // The approved URL passes, with or without the trailing slash and inside an href
+  assert.equal(find('Live: https://acmecorp-demo.example.app/').length, 0);
+  assert.equal(find('<a href="https://acmecorp-demo.example.app">demo</a>').length, 0);
+  // An arbitrary company-name URL still fails (warning), including the same company on another host or path
+  assert.equal(find('Source: https://github.com/me/globex-take-home').length, 1);
+  assert.equal(find('Source: https://github.com/me/acmecorp-take-home').length, 1);
+  assert.equal(find('Live: https://acmecorp-demo.example.app/private/acmecorp').length, 1);
+  assert.equal(find('Live: https://acmecorp-demo.example.app.evil.example/').length, 1);
+  // The exemption is tied to its own company: it does not excuse a different name in the same URL
+  assert.equal(
+    find('Live: https://acmecorp-demo.example.app/ and https://globex-demo.example.app/').length,
+    1,
+  );
+  // Prose mentions remain errors even when the allowlisted URL is on the same line
+  const prose = find('Built for Acmecorp, live at https://acmecorp-demo.example.app/');
+  assert.equal(prose.length, 1);
+  assert.equal(prose[0].level, 'error');
+  // Without any allowlist the same URL is reported
+  assert.equal(R.findCompanies('Live: https://acmecorp-demo.example.app/', names).length, 1);
+});
+
+test('R8: the real governance allowlist (when available) is exact and narrow', async () => {
+  const { loadGovernance } = await import('../../scripts/lib/governance.mjs');
+  const gov = loadGovernance({ env: {} });
+  if (!gov.available) return; // local-only check; CI loads the data from the secret
+  const { names, allowedUrls } = gov.unnamedCompanies;
+  assert.ok(allowedUrls.length >= 1);
+  for (const a of allowedUrls) {
+    assert.ok(a.reason, 'each exemption documents its reason in the private data');
+    assert.ok(
+      names.some((n) => n.toLowerCase() === a.company.toLowerCase()),
+      'exemption names a governed company',
+    );
+    assert.equal(R.findCompanies('x ' + a.url, names, { allowedUrls }).length, 0, 'approved URL passes');
+    const other = 'https://' + a.company.toLowerCase() + '-unrelated.example.com/';
+    assert.equal(
+      R.findCompanies(other, names, { allowedUrls }).length,
+      1,
+      'arbitrary same-company URL still warns',
+    );
+    assert.equal(
+      R.findCompanies('Built for ' + a.company + ' ' + a.url, names, { allowedUrls })[0].level,
+      'error',
+    );
+  }
+});

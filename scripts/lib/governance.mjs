@@ -7,7 +7,7 @@ import path from 'node:path';
 
 const EMPTY = {
   neverLink: { repos: [], projectNames: [] },
-  unnamedCompanies: { names: [] },
+  unnamedCompanies: { names: [], allowedUrls: [] },
   privatePatterns: { literals: [], allowedCredentials: [], forbiddenFiles: [] },
 };
 
@@ -38,7 +38,10 @@ export function loadGovernance({ env = process.env, cwd = process.cwd() } = {}) 
 function normalise(d) {
   return {
     neverLink: { repos: d.neverLink?.repos ?? [], projectNames: d.neverLink?.projectNames ?? [] },
-    unnamedCompanies: { names: d.unnamedCompanies?.names ?? [] },
+    unnamedCompanies: {
+      names: d.unnamedCompanies?.names ?? [],
+      allowedUrls: d.unnamedCompanies?.allowedUrls ?? [],
+    },
     privatePatterns: {
       literals: d.privatePatterns?.literals ?? [],
       allowedCredentials: d.privatePatterns?.allowedCredentials ?? [],

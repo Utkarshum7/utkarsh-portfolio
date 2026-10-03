@@ -23,6 +23,7 @@ export function checkDist({ dist, governance, approvedEmails = [], requireSite =
     findings.push({ rule: 'SEC', level: 'error', message: 'dist/_headers is missing (security headers)' });
 
   const allowed = governance.privatePatterns.allowedCredentials ?? [];
+  const allowedUrls = governance.unnamedCompanies.allowedUrls ?? [];
   const allowedTexts = allowed.map((a) => a.text);
 
   for (const file of textFiles) {
@@ -46,13 +47,13 @@ export function checkDist({ dist, governance, approvedEmails = [], requireSite =
       const text = R.htmlVisibleText(raw);
       findings.push(...R.findDraftMarkers(text, { file: r }));
       findings.push(
-        ...R.findCompanies(text, governance.unnamedCompanies.names, { file: r }).filter(
+        ...R.findCompanies(text, governance.unnamedCompanies.names, { file: r, allowedUrls }).filter(
           (f) => f.level === 'error',
         ),
       );
       const hrefs = R.htmlHrefs(raw).join('\n');
       findings.push(
-        ...R.findCompanies(hrefs, governance.unnamedCompanies.names, { file: r }).map((f) => ({
+        ...R.findCompanies(hrefs, governance.unnamedCompanies.names, { file: r, allowedUrls }).map((f) => ({
           ...f,
           level: 'warn',
         })),

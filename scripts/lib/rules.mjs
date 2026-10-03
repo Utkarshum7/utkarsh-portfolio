@@ -126,9 +126,16 @@ export function findNeverLink(text, neverLink, { file } = {}) {
   return out;
 }
 
-/** Company names: errors in prose, warnings inside URLs (repository renames pending). */
-export function findCompanies(text, names, { file } = {}) {
+/**
+ * Company names must not appear in visible text (error) and are reported when they appear inside a URL (warning).
+ * `allowedUrls` (private governance data: [{ url, company, reason }]) exempts one exact URL for one company name:
+ * no wildcards, no other paths or hosts, and prose mentions are still errors.
+ */
+export function findCompanies(text, names, { file, allowedUrls = [] } = {}) {
   const out = [];
+  const norm = (u) => u.replace(/\/+$/, '').toLowerCase();
+  const isAllowed = (u, name) =>
+    allowedUrls.some((a) => a.company?.toLowerCase() === name.toLowerCase() && norm(a.url) === norm(u));
   text.split(/\r?\n/).forEach((line, i) => {
     const urls = line.match(/https?:\/\/[^\s"'<>)]+/g) ?? [];
     const prose = line.replace(/https?:\/\/[^\s"'<>)]+/g, ' ');
@@ -142,7 +149,7 @@ export function findCompanies(text, names, { file } = {}) {
           file,
           line: i + 1,
         });
-      else if (urls.some((u) => re.test(u.replace(/[-_./]/g, ' ')))) {
+      else if (urls.some((u) => !isAllowed(u, name) && re.test(u.replace(/[-_./]/g, ' ')))) {
         out.push({
           rule: 'R8',
           level: 'warn',

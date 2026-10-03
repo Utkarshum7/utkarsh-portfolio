@@ -75,7 +75,12 @@ export function checkBoundary({ root, files, governance }) {
     findings.push(...R.findPrivatePaths(text, { file: f }));
     findings.push(...R.findLiterals(text, governance.privatePatterns.literals, { file: f }));
     findings.push(...R.findNeverLink(text, governance.neverLink, { file: f }));
-    findings.push(...R.findCompanies(text, governance.unnamedCompanies.names, { file: f }));
+    findings.push(
+      ...R.findCompanies(text, governance.unnamedCompanies.names, {
+        file: f,
+        allowedUrls: governance.unnamedCompanies.allowedUrls,
+      }),
+    );
   }
   return findings;
 }
