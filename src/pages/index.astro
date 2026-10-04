@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectCard from '../components/content/ProjectCard.astro';
 import ProjectRow from '../components/content/ProjectRow.astro';
@@ -12,6 +13,7 @@ import StatusPanel from '../components/content/StatusPanel.astro';
 import Icon from '../components/site/Icon.astro';
 import Dots from '../components/content/Dots.astro';
 import { profile } from '../data/profile';
+import heroPortrait from '../assets/portrait/hero-portrait.jpg';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const flagships = projects.filter((p) => p.data.tier === 'flagship');
@@ -41,53 +43,70 @@ const jsonLd = [
 >
   <!-- 1. Identity -->
   <section class="hero container" aria-labelledby="statement">
-    <p class="meta">{profile.name}</p>
-    <p class="role">
-      <Dots items={profile.roleLine.split(' · ')} />
-    </p>
-    <h1 id="statement">{profile.statement}</h1>
-    <p class="lead">
-      I built{' '}
-      <a href="/work/scopetrace">
-        <strong>ScopeTrace</strong>
-      </a>
-      , an emissions-reporting platform whose AI layer can explain the data but is designed, and tested per
-      feature, never to change it, with <Claim id="st.tests.backend" /> running in CI; and{' '}
-      <a href="/work/support-intelligence">a customer-support agent</a> I judged the hard way: against two
-      baselines, on <Claim id="dsi.golden.human" />, with its weakest number in the headline.
-    </p>
-    <p class="status-line">
-      <span>{profile.location}</span>
-      <span>{profile.education}</span>
-      <span>{profile.availability}</span>
-    </p>
-    <ul role="list" class="proof">
-      <li>
-        <a href="/work/scopetrace" class="proof-primary">
-          Read the ScopeTrace case study <Icon name="arrow-right" size={14} />
+    <div class="hero-copy">
+      <p class="meta">{profile.name}</p>
+      <p class="role">
+        <Dots items={profile.roleLine.split(' · ')} />
+      </p>
+      <h1 id="statement">{profile.statement}</h1>
+      <p class="lead">
+        I built{' '}
+        <a href="/work/scopetrace">
+          <strong>ScopeTrace</strong>
         </a>
-      </li>
-      <li>
-        <ExtLink href={profile.github} rel="me">
-          GitHub
-        </ExtLink>
-      </li>
-      <li>
-        <ExtLink href={profile.linkedin} rel="me">
-          LinkedIn
-        </ExtLink>
-      </li>
-      {profile.resume && (
+        , an emissions-reporting platform whose AI layer can explain the data but is designed, and tested per
+        feature, never to change it, with <Claim id="st.tests.backend" /> running in CI; and{' '}
+        <a href="/work/support-intelligence">a customer-support agent</a> I judged the hard way: against two
+        baselines, on <Claim id="dsi.golden.human" />, with its weakest number in the headline.
+      </p>
+      <p class="status-line">
+        <span>{profile.location}</span>
+        <span>{profile.education}</span>
+        <span>{profile.availability}</span>
+      </p>
+      <ul role="list" class="proof">
         <li>
-          <a href={profile.resume} download>
-            Résumé (PDF) <Icon name="download" size={14} />
+          <a href="/work/scopetrace" class="proof-primary">
+            Read the ScopeTrace case study <Icon name="arrow-right" size={14} />
           </a>
         </li>
-      )}
-      <li>
-        <CopyEmail />
-      </li>
-    </ul>
+        <li>
+          <ExtLink href={profile.github} rel="me">
+            GitHub
+          </ExtLink>
+        </li>
+        <li>
+          <ExtLink href={profile.linkedin} rel="me">
+            LinkedIn
+          </ExtLink>
+        </li>
+        {profile.resume && (
+          <li>
+            <a href={profile.resume} download>
+              Résumé (PDF) <Icon name="download" size={14} />
+            </a>
+          </li>
+        )}
+        <li>
+          <CopyEmail />
+        </li>
+      </ul>
+    </div>
+    <figure class="hero-figure">
+      <Image
+        src={heroPortrait}
+        alt="Utkarsh Amaresh at a conference"
+        width={849}
+        height={1061}
+        widths={[420, 640, 849]}
+        sizes="(min-width: 1024px) 26rem, (min-width: 900px) 30vw, calc(100vw - 3rem)"
+        format="webp"
+        quality={85}
+        loading="lazy"
+        decoding="async"
+        class="hero-photo"
+      />
+    </figure>
   </section>
 
   <!-- 2. Selected work -->
@@ -236,9 +255,80 @@ const jsonLd = [
   .hero {
     padding-block: var(--space-8) var(--space-9);
   }
+  /* Two columns from 900px up: copy left, portrait right. Below that the portrait follows the copy. */
+  .hero {
+    display: grid;
+    gap: var(--space-7);
+  }
+  @media (min-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr) clamp(15rem, 30vw, 26rem);
+      align-items: center;
+      column-gap: var(--space-7);
+    }
+  }
   @media (min-width: 1024px) {
     .hero {
       padding-block: var(--space-11) var(--space-10);
+      column-gap: var(--space-9);
+    }
+  }
+  /* Editorial treatment: grayscale, cool-tinted from the ink token, and faded into the page at its edges so the
+     image reads as part of the page rather than as a card. */
+  .hero-figure {
+    position: relative;
+    margin: 0;
+    isolation: isolate;
+    max-width: 28rem;
+    -webkit-mask-image:
+      linear-gradient(to top, transparent 0, black 26%), linear-gradient(to bottom, transparent 0, black 14%);
+    mask-image:
+      linear-gradient(to top, transparent 0, black 26%), linear-gradient(to bottom, transparent 0, black 14%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+  .hero-figure::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ink-3);
+    mix-blend-mode: color;
+    opacity: 0.85;
+    pointer-events: none;
+  }
+  .hero-figure :global(.hero-photo) {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    object-position: 50% 36%;
+    filter: grayscale(1) contrast(1.05);
+  }
+  @media (min-width: 640px) {
+    .hero-figure {
+      max-width: none;
+    }
+    .hero-figure :global(.hero-photo) {
+      aspect-ratio: 16 / 9;
+      object-position: 50% 40%;
+    }
+  }
+  @media (min-width: 900px) {
+    .hero-figure {
+      max-width: none;
+      -webkit-mask-image:
+        linear-gradient(to right, transparent 0, black 42%),
+        linear-gradient(to top, transparent 0, black 24%),
+        linear-gradient(to bottom, transparent 0, black 10%);
+      mask-image:
+        linear-gradient(to right, transparent 0, black 42%),
+        linear-gradient(to top, transparent 0, black 24%),
+        linear-gradient(to bottom, transparent 0, black 10%);
+    }
+    .hero-figure :global(.hero-photo) {
+      aspect-ratio: 4 / 5;
+      object-position: 50% 50%;
     }
   }
   /* The job title: the first thing a recruiter looks for, kept well below the headline in size and weight */
