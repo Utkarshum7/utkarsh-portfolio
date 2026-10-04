@@ -47,7 +47,7 @@ No value below is stored in this repository.
 | ------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SITE_URL`                | Build variable (not secret)            | Production origin, e.g. `https://your-domain`: origin only, no path. Used for canonical URLs, Open Graph/Twitter URLs, JSON-LD, the sitemap and `robots.txt`. Defaults to localhost when unset. |
 | `REQUIRE_SITE_URL`        | Build variable (`1` in production)     | Makes the build **fail** if `SITE_URL` is missing, not `https://`, a local address, or has a path. Set it on every production build so localhost can never reach a deployed canonical URL.  |
-| `CONTENT_GOVERNANCE_JSON` | Secret (CI only)                       | Private validation data (lists of names and strings that must never appear in the output). Locally the scripts read it from `GOVERNANCE_DIR` (default `../governance`). In CI the checks **fail closed** without it. |
+| `CONTENT_GOVERNANCE_JSON` | Secret (CI and the production host) | Private validation data (lists of names and strings that must never appear in the output). Locally the scripts read it from `GOVERNANCE_DIR` (default `../governance`). In CI and on the host's build the checks **fail closed** without it. |
 | `DEPLOY_HOOK_URL`         | Secret (optional, scheduled job only)  | If set, the daily status workflow calls it to rebuild the site with a fresh "Running systems" snapshot. Inactive when unset.                                                              |
 
 ```bash
@@ -55,14 +55,64 @@ No value below is stored in this repository.
 REQUIRE_SITE_URL=1 SITE_URL=https://your-domain npm run build
 ```
 
-## Deployment prerequisites
+## Deploying
 
-- Static hosting that serves `dist/` and honours a `_headers` file (Cloudflare Pages / Netlify format). The headers
-  set the Content Security Policy and other security headers. If an inline script changes, regenerate its hash with
-  `node scripts/csp-hashes.mjs --write`; the output check fails until it matches.
-- Build command `npm run status && npm run build` with `SITE_URL` and `REQUIRE_SITE_URL=1` set; publish directory `dist`.
+The site is fully static: Astro builds plain HTML into `dist/`. It needs no server, adapter or functions.
+
+- **Build command:** `npm run status && npm run build` (checks the demos for the "Running systems" snapshot, then lints
+  content, type-checks, builds, scans the output and enforces size budgets).
+- **Output directory:** `dist`
+- **Node:** 24 (`.nvmrc`)
+- **Environment:** `SITE_URL`, `REQUIRE_SITE_URL=1` and `CONTENT_GOVERNANCE_JSON` (see above). Set them for production
+  builds, and for preview builds if previews are built.
+
+### Response headers: `public/_headers` is the source, `vercel.json` is derived
+
+Security and caching headers (a Content Security Policy, HSTS, `X-Frame-Options` and the rest) are written once, in
+`public/_headers`. That file works on Cloudflare Pages and Netlify but **is ignored by Vercel**, which reads headers
+from `vercel.json` instead. So `vercel.json` is **generated from `public/_headers`** and must not be edited by hand:
+
+```bash
+node scripts/csp-hashes.mjs --write        # after a build: refresh the CSP script hashes, then regenerate vercel.json
+node scripts/csp-hashes.mjs --sync-vercel  # only regenerate vercel.json from public/_headers (no build needed)
+```
+
+`vercel.json` also turns on `cleanUrls` (pages are built as `about.html` and must be served at `/about`, with
+`/about.html` redirecting there) and sets `trailingSlash: false` (`/about/` redirects to `/about`). The `/*.html` cache
+rule in `_headers` is not copied: Vercel already revalidates static files by default.
+
+`check-dist` (part of `npm run build`) and the unit tests **fail if `vercel.json` and `public/_headers` disagree**, if
+`cleanUrls`/`trailingSlash` change, if any of the seven security headers is missing from `vercel.json`, or if an inline
+script is not covered by the CSP in both files. If an inline script changes, run the `--write` command above and commit
+both files.
+
+### Vercel
+
+1. Import the repository as a new project. Framework preset **Astro**; no adapter is needed.
+2. Build Command: `npm run status && npm run build`. Output Directory: `dist`. Node.js Version: **24.x** (Settings →
+   Build and Deployment; Vercel does not read `.nvmrc`).
+3. Environment variables (Production and Preview):
+   - `SITE_URL`: the production origin, e.g. `https://your-domain` (origin only, no path).
+   - `REQUIRE_SITE_URL`: `1`.
+   - `CONTENT_GOVERNANCE_JSON`: the private validation data, as a **Sensitive** variable. Vercel builds run with `CI`
+     set, so the build **fails closed** without it, and a commit that violates the content rules can never go live.
+     The value is never stored in this repository.
+4. Optional: create a Deploy Hook for `main` and store its URL as the GitHub Actions secret `DEPLOY_HOOK_URL`, so the
+   daily workflow rebuilds the site and keeps the "Running systems" snapshot fresh (it hides itself after 7 days).
+5. Do not enable Vercel Analytics or Speed Insights: the site loads no analytics or third-party scripts.
+
+Changing `SITE_URL` requires a new deployment, because canonical URLs, the sitemap and `robots.txt` are generated at
+build time.
+
+### Other static hosts
+
+Cloudflare Pages and Netlify read `public/_headers` directly (it is copied into `dist/`). The same build settings apply.
+
+### Automation
+
 - `.github/workflows/ci.yml` runs the full validation on pull requests and `main`. It does not deploy.
-  `.github/workflows/scheduled-check.yml` checks the demos daily; it only triggers a rebuild if `DEPLOY_HOOK_URL` is configured.
+- `.github/workflows/scheduled-check.yml` checks the demos daily; it only triggers a rebuild if `DEPLOY_HOOK_URL` is
+  configured.
 
 ### Post-deployment smoke test
 
@@ -72,6 +122,7 @@ After a deployment, run this against the live origin (read-only; needs no secret
 npm run smoke -- https://your-domain
 ```
 
-It checks that the main pages return 200, an unknown route returns 404, the sitemap and `robots.txt` exist and use
-the production origin, canonical and `og:image` URLs use the production origin, the security headers are present,
-no secret-like strings appear in any page, and that the ScopeTrace page lists only the approved demo accounts.
+It checks that the main pages return 200, an unknown route returns 404, `/about.html` and `/about/` redirect to
+`/about`, the sitemap and `robots.txt` exist and use the production origin, canonical and `og:image` URLs use the
+production origin, all seven security headers are present (also on the 404 page), hashed `/_astro/` assets are cached
+immutably, no secret-like strings appear in any page, and that the ScopeTrace page lists only the approved demo accounts.

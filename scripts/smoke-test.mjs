@@ -23,7 +23,9 @@ const REQUIRED_HEADERS = [
   'x-frame-options',
   'referrer-policy',
   'permissions-policy',
+  'cross-origin-opener-policy',
 ];
+const REDIRECT = [301, 302, 307, 308];
 const DEMO_PASSWORD = 'demo12345';
 const DEMO_PAGE = '/work/scopetrace';
 // Strings that must never appear on any page (admin credentials, private-account names)
@@ -57,8 +59,28 @@ export async function runSmoke(base, { fetch: f = fetch } = {}) {
   try {
     const { res } = await get('/this-page-does-not-exist-smoke');
     check('Unknown route → 404', res.status === 404, `got ${res.status}`);
+    const missing = REQUIRED_HEADERS.filter((h) => !res.headers.get(h));
+    check('security headers also on the 404 page', missing.length === 0, `missing: ${missing.join(', ')}`);
   } catch (e) {
     check('Unknown route → 404', false, String(e.message ?? e));
+  }
+
+  // One URL per page: the .html file URL and the trailing-slash URL redirect to the extensionless one
+  for (const [from, label] of [
+    ['/about.html', '/about.html redirects to /about'],
+    ['/about/', '/about/ redirects to /about'],
+  ]) {
+    try {
+      const { res } = await get(from);
+      const to = res.headers.get('location') ?? '';
+      check(
+        label,
+        REDIRECT.includes(res.status) && new URL(to, origin).pathname === '/about',
+        `got ${res.status} → ${to || 'no location'}`,
+      );
+    } catch (e) {
+      check(label, false, String(e.message ?? e));
+    }
   }
 
   for (const [p, label] of [
@@ -89,6 +111,21 @@ export async function runSmoke(base, { fetch: f = fetch } = {}) {
   }
 
   const home = pages['/'];
+  const asset = home?.body.match(/["'](\/_astro\/[^"']+\.(?:woff2|css|js|webp))["']/)?.[1];
+  if (home) {
+    try {
+      if (!asset) throw new Error('no /_astro/ asset found on the home page');
+      const { res } = await get(asset);
+      const cc = res.headers.get('cache-control') ?? '';
+      check(
+        'hashed /_astro/ assets are cached immutably',
+        res.status === 200 && /max-age=31536000/.test(cc) && /immutable/.test(cc),
+        `${asset}: ${res.status} ${cc}`,
+      );
+    } catch (e) {
+      check('hashed /_astro/ assets are cached immutably', false, String(e.message ?? e));
+    }
+  }
   if (home) {
     const canonical = home.body.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
     check('canonical uses the production origin', canonical === origin + '/', canonical ?? 'missing');
