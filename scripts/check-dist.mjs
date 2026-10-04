@@ -7,11 +7,20 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { loadGovernance } from './lib/governance.mjs';
 import * as R from './lib/rules.mjs';
+import { checkVercelConfig, vercelCsp } from './lib/headers.mjs';
 import { walk, report } from './lib/fsutil.mjs';
 
 const TEXT_EXT = /\.(html|js|mjs|css|xml|txt|json|svg|webmanifest)$|(^|[\\/])_headers$|(^|[\\/])_redirects$/i;
 
-export function checkDist({ dist, governance, approvedEmails = [], requireSite = false }) {
+// vercelConfig: parsed vercel.json, or null if missing/invalid. Left undefined, the Vercel header check is skipped
+// (the CLI always passes it: Vercel ignores _headers, so vercel.json must carry the same security headers).
+export function checkDist({
+  dist,
+  governance,
+  approvedEmails = [],
+  requireSite = false,
+  vercelConfig = undefined,
+}) {
   const findings = [];
   const rel = (p) => path.relative(dist, p).split(path.sep).join('/');
   const files = [...walk(dist)];
@@ -21,6 +30,9 @@ export function checkDist({ dist, governance, approvedEmails = [], requireSite =
   const headers = fs.existsSync(headersFile) ? fs.readFileSync(headersFile, 'utf8') : '';
   if (!headers)
     findings.push({ rule: 'SEC', level: 'error', message: 'dist/_headers is missing (security headers)' });
+
+  if (vercelConfig !== undefined) findings.push(...checkVercelConfig(vercelConfig, headers));
+  const csp = vercelConfig ? vercelCsp(vercelConfig) : undefined;
 
   const allowed = governance.privatePatterns.allowedCredentials ?? [];
   const allowedUrls = governance.unnamedCompanies.allowedUrls ?? [];
@@ -61,7 +73,7 @@ export function checkDist({ dist, governance, approvedEmails = [], requireSite =
       findings.push(...R.findContactLeaks(text, { approvedEmails, file: r }));
       findings.push(...R.findGluedInline(raw, { file: r }));
 
-      // CSP: every inline script must be hash-allowed in _headers
+      // CSP: every inline script must be hash-allowed in _headers and in vercel.json
       for (const body of R.inlineScriptBodies(raw)) {
         const hash = `'sha256-${crypto.createHash('sha256').update(body).digest('base64')}'`;
         if (!headers.includes(hash)) {
@@ -69,6 +81,15 @@ export function checkDist({ dist, governance, approvedEmails = [], requireSite =
             rule: 'CSP',
             level: 'error',
             message: `Inline script not allowed by CSP (add ${hash} to public/_headers)`,
+            file: r,
+          });
+        }
+        // (a missing/invalid vercel.json is already reported once above)
+        if (vercelConfig && !csp?.includes(hash)) {
+          findings.push({
+            rule: 'CSP',
+            level: 'error',
+            message: `Inline script not allowed by the CSP in vercel.json (run node scripts/csp-hashes.mjs --write)`,
             file: r,
           });
         }
@@ -134,10 +155,17 @@ if (isMain) {
     console.warn('⚠ governance data not found: R7, R8, R11 and private-literal checks skipped (local only).');
   const profileSrc = fs.readFileSync('src/data/profile.ts', 'utf8');
   const approvedEmails = [...profileSrc.matchAll(/email:\s*'([^']+)'/g)].map((m) => m[1].toLowerCase());
+  let vercelConfig = null;
+  try {
+    vercelConfig = JSON.parse(fs.readFileSync(path.resolve('vercel.json'), 'utf8'));
+  } catch {
+    /* reported by checkVercelConfig */
+  }
   const { findings, files, pages } = checkDist({
     dist,
     governance,
     approvedEmails,
+    vercelConfig,
     requireSite:
       process.argv.includes('--require-site') ||
       ['1', 'true'].includes(String(process.env.REQUIRE_SITE_URL ?? '').toLowerCase()),
