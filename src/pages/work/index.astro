@@ -1,20 +1,27 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ProjectCard from '../../components/content/ProjectCard.astro';
+import ProjectShowcase from '../../components/content/ProjectShowcase.astro';
 import ProjectRow from '../../components/content/ProjectRow.astro';
 import ExtLink from '../../components/content/ExtLink.astro';
 import { resolveUrl } from '../../lib/urls';
+import { AREAS, allTech, techByProject, type AreaId } from '../../data/toolkit';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const flagships = projects.filter((p) => p.data.tier === 'flagship');
 const supporting = projects.filter((p) => p.data.tier === 'supporting');
 const archive = projects.filter((p) => p.data.tier === 'archive');
+
+// Filters are progressive enhancement: the full list is the page; the script only hides entries.
+const techMap = techByProject();
+const areaIds = Object.keys(AREAS) as AreaId[];
+const areaCount = (a: AreaId) => projects.filter((p) => p.data.areas.includes(a)).length;
+const techNames = Object.fromEntries(allTech.map((t) => [t.id, t.name]));
 ---
 
 <BaseLayout
   title="Work · Utkarsh Amaresh"
-  description="Case studies and projects: backend services, AI systems with evaluation, and the front-end work around them."
+  description="Case studies and projects across backend services, AI systems with evaluation, and cloud & DevOps, filterable by discipline and technology."
 >
   <div class="container work">
     <header class="head">
@@ -23,22 +30,44 @@ const archive = projects.filter((p) => p.data.tier === 'archive');
         Three case studies go deep; the rest are smaller projects. Every case study and project listed here
         was built solo.
       </p>
+      <div class="filters" data-filters data-tech-names={JSON.stringify(techNames)} hidden>
+        <p class="filter-label" id="filter-label">
+          Filter by discipline
+        </p>
+        <div class="area-buttons" role="group" aria-labelledby="filter-label">
+          <button type="button" aria-pressed="true" data-area="">
+            All <span class="n">{projects.length}</span>
+          </button>
+          {areaIds.map((a) => (
+            <button type="button" aria-pressed="false" data-area={a}>
+              {AREAS[a].label} <span class="n">{areaCount(a)}</span>
+            </button>
+          ))}
+        </div>
+        <p class="tech-filter" data-tech-filter hidden>
+          Using <strong data-tech-name></strong>
+          <button type="button" data-clear-tech>
+            Clear<span class="visually-hidden"> technology filter</span>
+          </button>
+        </p>
+        <p class="count" role="status" data-count></p>
+      </div>
     </header>
 
-    <section class="section" aria-labelledby="case-studies">
+    <section class="section" aria-labelledby="case-studies" data-group>
       <h2 class="section-label" id="case-studies">
         Case studies
       </h2>
       <ol role="list" class="cards">
         {flagships.map((p, i) => (
-          <li>
-            <ProjectCard project={p} index={i + 1} />
+          <li data-entry>
+            <ProjectShowcase project={p} layout={i === 0 ? 'lead' : 'card'} index={i + 1} />
           </li>
         ))}
       </ol>
     </section>
 
-    <section class="section" aria-labelledby="more-heading" id="more">
+    <section class="section" aria-labelledby="more-heading" id="more" data-group>
       <h2 class="section-label" id="more-heading">
         Projects
       </h2>
@@ -49,7 +78,7 @@ const archive = projects.filter((p) => p.data.tier === 'archive');
       </ul>
     </section>
 
-    <section class="section" aria-labelledby="archive">
+    <section class="section" aria-labelledby="archive" data-group>
       <h2 class="section-label" id="archive">
         Archive
       </h2>
@@ -66,7 +95,12 @@ const archive = projects.filter((p) => p.data.tier === 'archive');
         </thead>
         <tbody>
           {archive.map((p) => (
-            <tr>
+            <tr
+              id={p.id}
+              data-entry
+              data-areas={p.data.areas.join(' ')}
+              data-tech={(techMap.get(p.id) ?? []).join(' ')}
+            >
               <th scope="row">{p.data.title}</th>
               <td>{p.data.summary}</td>
               <td class="year">{p.data.year}</td>
@@ -89,6 +123,66 @@ const archive = projects.filter((p) => p.data.tier === 'archive');
   </div>
 </BaseLayout>
 
+<script>
+  // Work index filters: discipline (?area=) and technology (?tech=, linked from the home toolkit).
+  // Without this script every project is listed and the controls stay hidden.
+  const root = document.querySelector<HTMLElement>('[data-filters]');
+  if (root) {
+    const names: Record<string, string> = JSON.parse(root.dataset.techNames ?? '{}');
+    const entries = [...document.querySelectorAll<HTMLElement>('[data-entry], li.row')];
+    const groups = [...document.querySelectorAll<HTMLElement>('[data-group]')];
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-area]')];
+    const techBox = root.querySelector<HTMLElement>('[data-tech-filter]')!;
+    const count = root.querySelector<HTMLElement>('[data-count]')!;
+    const params = new URLSearchParams(location.search);
+    const wantArea = params.get('area') ?? '';
+    const wantTech = params.get('tech') ?? '';
+    let area = buttons.some((b) => b.dataset.area === wantArea) ? wantArea : '';
+    let tech = names[wantTech] ? wantTech : '';
+
+    // Areas and technologies sit on the entry itself (rows, archive) or on the card inside it
+    const values = (el: HTMLElement, key: 'areas' | 'tech') =>
+      (el.dataset[key] ?? el.querySelector<HTMLElement>(`[data-${key}]`)?.dataset[key] ?? '').split(' ');
+
+    const apply = () => {
+      let shown = 0;
+      for (const el of entries) {
+        const ok =
+          (!area || values(el, 'areas').includes(area)) && (!tech || values(el, 'tech').includes(tech));
+        el.hidden = !ok;
+        if (ok) shown++;
+      }
+      for (const g of groups)
+        g.hidden = ![...g.querySelectorAll<HTMLElement>('[data-entry], li.row')].some((e) => !e.hidden);
+      for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.area === area));
+      techBox.hidden = !tech;
+      techBox.querySelector('[data-tech-name]')!.textContent = names[tech] ?? '';
+      count.textContent =
+        area || tech
+          ? `Showing ${shown} of ${entries.length} projects`
+          : `Showing all ${entries.length} projects`;
+      const q = new URLSearchParams();
+      if (area) q.set('area', area);
+      if (tech) q.set('tech', tech);
+      const query = q.toString();
+      history.replaceState(null, '', query ? `?${query}` : location.pathname);
+    };
+
+    for (const b of buttons)
+      b.addEventListener('click', () => {
+        area = b.dataset.area ?? '';
+        apply();
+      });
+    root.querySelector('[data-clear-tech]')!.addEventListener('click', () => {
+      tech = '';
+      apply();
+      buttons.find((b) => b.getAttribute('aria-pressed') === 'true')?.focus();
+    });
+    root.hidden = false;
+    apply();
+  }
+</script>
+
 <style>
   .work {
     padding-top: var(--space-8);
@@ -103,9 +197,94 @@ const archive = projects.filter((p) => p.data.tier === 'archive');
     color: var(--ink-2);
     max-width: var(--measure-lead);
   }
+  .filters {
+    margin-top: var(--space-6);
+    display: grid;
+    gap: var(--space-3);
+  }
+  .filter-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .area-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .filters button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--target);
+    padding-inline: var(--space-3);
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-1);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition:
+      border-color var(--dur-fast) var(--ease),
+      background-color var(--dur-fast) var(--ease);
+  }
+  /* The pressed state is a filled button, so it never relies on colour alone */
+  .filters button[aria-pressed='true'] {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .filters button:hover {
+      border-color: var(--ink-3);
+    }
+    .filters button[aria-pressed='true']:hover {
+      border-color: var(--ink);
+    }
+  }
+  .n {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--ink-3);
+  }
+  .filters button[aria-pressed='true'] .n {
+    color: inherit;
+  }
+  .tech-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .tech-filter strong {
+    color: var(--ink);
+  }
+  .count {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .archive tr {
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  /* Case studies: the lead project full width, the other two side by side */
   .cards {
     display: grid;
-    gap: var(--space-5);
+    gap: var(--space-9);
+  }
+  @media (min-width: 900px) {
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--space-7);
+    }
+    .cards > li:first-child {
+      grid-column: 1 / -1;
+    }
   }
   .rows {
     display: grid;

@@ -1,0 +1,243 @@
+---
+/**
+ * Engineering toolkit (/skills): three disciplines as equal columns, each tool linked to where it was used.
+ * Static HTML: every item is a <details>, so the evidence is reachable by keyboard, touch and without JavaScript.
+ */
+import { getCollection } from 'astro:content';
+import { disciplines, frontendAndTooling, type Tech, type Use } from '../../data/toolkit';
+import ToolItem, { type ResolvedUse } from './ToolItem.astro';
+import Icon from '../site/Icon.astro';
+
+const projects = new Map((await getCollection('projects')).map((p) => [p.id, p]));
+
+const SHORT: Record<string, string> = {
+  'support-intelligence': 'Support Intelligence',
+  'resume-screener': 'Résumé Screener',
+  'ai-investment-copilot': 'Investment Copilot',
+  'k8s-notes-app-deployment': 'K8s Notes App',
+  'edge-observability-stack': 'Edge Observability',
+  'docker-monitoring-stack': 'Docker Monitoring',
+  'apollo-family-clinic': 'Apollo Clinic',
+};
+
+function resolve(u: Use, tech: Tech): ResolvedUse {
+  switch (u.kind) {
+    case 'project': {
+      const p = projects.get(u.project);
+      if (!p) throw new Error(`Toolkit: "${tech.id}" refers to unknown project "${u.project}"`);
+      const href = p.data.caseStudy ? `/work/${p.id}` : `/work#${p.id}`;
+      return { kind: 'Project', label: p.data.title, href, short: SHORT[p.id] ?? p.data.title, note: u.note };
+    }
+    case 'experience':
+      return {
+        kind: 'Experience',
+        label: 'DevOps internship',
+        href: '/about#experience',
+        short: 'Internship',
+        note: `${u.note} The employer's code is private.`,
+      };
+    case 'certification':
+      return {
+        kind: 'Certification',
+        label: 'Oracle certifications',
+        href: '/about#credentials',
+        short: 'Certified',
+        note: u.note,
+      };
+    case 'event':
+      return { kind: 'Hackathon', label: u.name, href: '/about#events', short: 'Hackathon', note: u.note };
+    case 'site':
+      return {
+        kind: 'This site',
+        label: 'How this site is built',
+        href: '/colophon',
+        short: 'This site',
+        note: u.note,
+      };
+  }
+}
+
+const item = (t: Tech) => ({
+  tech: t,
+  uses: t.uses.map((u) => resolve(u, t)),
+  projectCount: t.uses.filter((u) => u.kind === 'project').length,
+});
+---
+
+<section class="section container toolkit" aria-labelledby="toolkit">
+  <div class="head">
+    <h2 class="section-label" id="toolkit">
+      Engineering toolkit
+    </h2>
+    <p class="intro">
+      Three disciplines, and where I've used each tool. Open any item for the evidence: projects link to their
+      code; internship work is described, because the employer's code is private.
+    </p>
+  </div>
+
+  <div class="disciplines">
+    {disciplines.map((d) => (
+      <section class="discipline" aria-labelledby={`discipline-${d.id}`}>
+        <p class="index" aria-hidden="true">
+          {d.index}
+        </p>
+        <h3 id={`discipline-${d.id}`}>{d.title}</h3>
+        <p class="thesis">{d.thesis}</p>
+        {d.groups.map((g) => (
+          <div class="group">
+            <h4>{g.label}</h4>
+            <ul role="list">
+              {g.items.map((t) => (
+                <li>
+                  <ToolItem {...item(t)} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    ))}
+  </div>
+
+  <section class="also" aria-labelledby="discipline-tooling">
+    <h3 id="discipline-tooling">Front-end &amp; tooling</h3>
+    <ul role="list">
+      {frontendAndTooling.map((t) => (
+        <li>
+          <ToolItem {...item(t)} />
+        </li>
+      ))}
+    </ul>
+    <p class="site-note">
+      This site is part of the evidence: static HTML, tested in a real browser with accessibility and
+      performance checks on every change.{' '}
+      <a href="/colophon">
+        How it's built <Icon name="arrow-right" size={14} />
+      </a>
+    </p>
+  </section>
+</section>
+
+<style>
+  .head {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+  .head .section-label {
+    margin-bottom: 0;
+  }
+  .intro {
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+  .disciplines {
+    display: grid;
+    gap: var(--space-7);
+  }
+  @media (min-width: 640px) {
+    .disciplines {
+      gap: var(--space-8);
+    }
+  }
+  /* Phone and tablet: one discipline per row, its tools in two columns, so the three disciplines stay within a
+     few screens. An opened tool spans both columns so its evidence has room. */
+  .group ul,
+  .also ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-4);
+    align-items: start;
+  }
+  .group li:has(> :global(details[open])),
+  .also li:has(> :global(details[open])) {
+    grid-column: 1 / -1;
+  }
+  @media (min-width: 640px) {
+    .group ul,
+    .also ul {
+      column-gap: var(--space-6);
+    }
+  }
+  @media (min-width: 1024px) {
+    .disciplines {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: var(--space-7);
+    }
+    .group ul {
+      display: block;
+    }
+  }
+  .discipline {
+    display: grid;
+    align-content: start;
+    border-top: 2px solid var(--ink);
+    padding-top: var(--space-3);
+  }
+  .index {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+  .discipline h3 {
+    margin-top: var(--space-1);
+    font-size: var(--text-lg);
+    line-height: var(--lh-lg);
+  }
+  .thesis {
+    margin-top: var(--space-2);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    max-width: 36ch;
+    min-height: calc(3 * var(--lh-sm) * 1em);
+  }
+  @media (max-width: 1023px) {
+    .thesis {
+      min-height: 0;
+    }
+  }
+  .group {
+    margin-top: var(--space-5);
+  }
+  .group h4 {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--lh-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+    margin-bottom: var(--space-1);
+  }
+  .also {
+    margin-top: var(--space-8);
+    padding-top: var(--space-3);
+    border-top: var(--hairline) solid var(--rule-strong);
+  }
+  .also h3 {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    margin-bottom: var(--space-3);
+  }
+  @media (min-width: 1024px) {
+    .also ul {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: var(--space-7);
+    }
+  }
+  .site-note {
+    margin-top: var(--space-5);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+  .site-note a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    white-space: nowrap;
+  }
+</style>

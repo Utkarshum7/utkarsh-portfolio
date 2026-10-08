@@ -1,23 +1,36 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ProjectCard from '../components/content/ProjectCard.astro';
-import ProjectRow from '../components/content/ProjectRow.astro';
 import Claim from '../components/content/Claim.astro';
 import ExtLink from '../components/content/ExtLink.astro';
 import CopyEmail from '../components/content/CopyEmail.astro';
-import EventList from '../components/content/EventList.astro';
 import CertList from '../components/content/CertList.astro';
-import StatusPanel from '../components/content/StatusPanel.astro';
 import Icon from '../components/site/Icon.astro';
 import Dots from '../components/content/Dots.astro';
+import ProjectShowcase from '../components/content/ProjectShowcase.astro';
+import ActivityGraph from '../components/content/ActivityGraph.astro';
+import RepoList from '../components/content/RepoList.astro';
+import SkillsInventory from '../components/content/SkillsInventory.astro';
 import { profile } from '../data/profile';
+import { disciplines } from '../data/toolkit';
+import { activity } from '../lib/activity';
 import heroPortrait from '../assets/portrait/hero-portrait.jpg';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const flagships = projects.filter((p) => p.data.tier === 'flagship');
-const supporting = projects.filter((p) => p.data.tier === 'supporting');
+const [lead, ...pair] = flagships;
+// Supporting projects with a live demo and a real screenshot
+const tiles = await Promise.all(
+  ['robofleet-monitor', 'appointment-board', 'apollo-family-clinic'].map((id) => getEntry('projects', id)),
+);
+
+// The three disciplines, each with a few representative tools (all evidenced on /skills)
+const pillarTools: Record<string, string[]> = {
+  backend: ['Python', 'Django', 'FastAPI', 'PostgreSQL'],
+  ai: ['LLMs', 'Evaluation', 'Retrieval', 'Guardrails'],
+  cloud: ['AWS', 'GCP', 'Docker', 'Kubernetes', 'Terraform'],
+};
 
 const site = new URL('/', Astro.site).href;
 const jsonLd = [
@@ -31,24 +44,34 @@ const jsonLd = [
     address: { '@type': 'PostalAddress', addressLocality: 'Bengaluru', addressCountry: 'IN' },
     alumniOf: { '@type': 'CollegeOrUniversity', name: 'RV College of Engineering' },
     sameAs: [profile.github, profile.linkedin],
-    knowsAbout: ['Python', 'Backend engineering', 'AI systems', 'LLM evaluation'],
+    knowsAbout: [
+      'Python',
+      'Backend engineering',
+      'AI systems',
+      'LLM evaluation',
+      'Cloud infrastructure',
+      'DevOps',
+      'Docker',
+      'Kubernetes',
+      'Terraform',
+    ],
   },
 ];
 ---
 
 <BaseLayout
-  title="Utkarsh Amaresh · Backend engineer, Python & AI systems"
-  description="Backend engineer building Python systems where AI assists and deterministic code decides, with tests, evaluation and deployments you can check."
+  title="Utkarsh Amaresh · Backend engineer: AI systems, cloud & DevOps"
+  description="Backend engineer working across Python services, AI systems and cloud & DevOps, where AI assists and deterministic code decides. Evidence you can check."
   jsonLd={jsonLd}
 >
-  <!-- 1. Identity -->
-  <section class="hero container" aria-labelledby="statement">
+  <!-- 1. Identity: who, what, the statement, and the three disciplines -->
+  <section class="hero container" aria-labelledby="hero-name">
     <div class="hero-copy">
-      <p class="meta">{profile.name}</p>
-      <p class="role">
+      <p class="eyebrow">
         <Dots items={profile.roleLine.split(' · ')} />
       </p>
-      <h1 id="statement">{profile.statement}</h1>
+      <h1 id="hero-name">{profile.name}</h1>
+      <p class="statement">{profile.statement}</p>
       <p class="lead">
         I built{' '}
         <a href="/work/scopetrace">
@@ -64,33 +87,15 @@ const jsonLd = [
         <span>{profile.education}</span>
         <span>{profile.availability}</span>
       </p>
-      <ul role="list" class="proof">
-        <li>
-          <a href="/work/scopetrace" class="proof-primary">
-            Read the ScopeTrace case study <Icon name="arrow-right" size={14} />
-          </a>
-        </li>
-        <li>
-          <ExtLink href={profile.github} rel="me">
-            GitHub
-          </ExtLink>
-        </li>
-        <li>
-          <ExtLink href={profile.linkedin} rel="me">
-            LinkedIn
-          </ExtLink>
-        </li>
-        {profile.resume && (
-          <li>
-            <a href={profile.resume} download>
-              Résumé (PDF) <Icon name="download" size={14} />
-            </a>
-          </li>
-        )}
-        <li>
-          <CopyEmail />
-        </li>
-      </ul>
+      <div class="actions">
+        <a href="/work" class="button primary">
+          See the work <Icon name="arrow-right" size={14} />
+        </a>
+        <a href="/code" class="button">
+          Code &amp; activity
+        </a>
+        <CopyEmail />
+      </div>
     </div>
     <figure class="hero-figure">
       <Image
@@ -107,87 +112,98 @@ const jsonLd = [
         class="hero-photo"
       />
     </figure>
+    <!-- The disciplines as one system: a bus line with a node per discipline, and an occasional packet travelling
+         along it (decorative; static under reduced motion) -->
+    <div class="system">
+      <div class="bus" aria-hidden="true">
+        <span class="track">
+          <span class="packet"></span>
+        </span>
+      </div>
+      <ul role="list" class="pillars" aria-label="Disciplines">
+        {disciplines.map((d) => (
+          <li>
+            <a href={`/skills#discipline-${d.id}`}>
+              <span class="num">{d.index}</span>
+              <span class="pillar-name">{d.title}</span>
+              <span class="pillar-tools">
+                <Dots items={pillarTools[d.id]!} />
+              </span>
+              <Icon name="arrow-right" size={14} class="pillar-arrow" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   </section>
 
-  <!-- 2. Selected work -->
+  <!-- 2. What I build: visual, evidence-first -->
   <section class="section container" aria-labelledby="selected-work">
-    <h2 class="section-label" id="selected-work">
-      Selected work
-    </h2>
-    <ol role="list" class="cards">
-      {flagships.map((p, i) => (
-        <li>
-          <ProjectCard project={p} index={i + 1} />
-        </li>
-      ))}
-    </ol>
-  </section>
-
-  <!-- 3. How I build -->
-  <section class="section container" aria-labelledby="how-i-build">
-    <h2 class="section-label" id="how-i-build">
-      How I build
-    </h2>
-    <ol role="list" class="principles">
-      <li>
-        <h3>AI proposes, code decides.</h3>
-        <p>
-          In ScopeTrace every model call passes through <Claim id="st.gateway">one gateway</Claim> that checks
-          policy, budget and data egress before the call and validates the response after it. The AI package
-          is designed not to write emission records, and for each of its five features{' '}
-          <Claim id="st.invariants">a test checks that running it leaves those records unchanged</Claim>.
-        </p>
-        <a href="/work/scopetrace#decision-one-gateway-for-every-ai-call">
-          See the gateway <Icon name="arrow-right" size={14} />
-        </a>
-      </li>
-      <li>
-        <h3>Measure it, including where it fails.</h3>
-        <p>
-          Delta Support Intelligence's most important number is <Claim id="dsi.escalation" />: it left{' '}
-          <Claim id="dsi.fn" marker={false} /> to be handled automatically. I lead with it because it decides
-          whether the system is safe to use.
-        </p>
-        <a href="/work/support-intelligence#results-against-baselines">
-          See the evaluation <Icon name="arrow-right" size={14} />
-        </a>
-      </li>
-      <li>
-        <h3>Make it operable.</h3>
-        <p>
-          <Claim id="st.health">Health endpoints</Claim> for the database, workers and AI layer,{' '}
-          <Claim id="st.obs" />, and{' '}
-          <Claim id="st.demomode">a demo mode that runs the same task pipeline in-process</Claim> so the whole
-          system works on free hosting without changing its architecture.
-        </p>
-        <a href="/work/scopetrace#running-it-deployment-and-operations">
-          See how it runs <Icon name="arrow-right" size={14} />
-        </a>
-      </li>
-    </ol>
-  </section>
-
-  <!-- 4. More work -->
-  <section class="section container" aria-labelledby="more-work">
     <div class="section-head">
-      <h2 class="section-label" id="more-work">
-        More work
+      <h2 class="section-label" id="selected-work">
+        Selected work
       </h2>
       <a href="/work" class="all">
-        All work <Icon name="arrow-right" size={14} />
+        All {projects.length} projects <Icon name="arrow-right" size={14} />
       </a>
     </div>
-    <ul role="list" class="rows">
-      {supporting.map((p) => (
-        <ProjectRow project={p} />
-      ))}
+    <div class="showcase-grid">
+      <ProjectShowcase project={lead!} layout="lead" index={1} />
+      <div class="pair">
+        {pair.map((p, i) => (
+          <ProjectShowcase project={p} layout="card" index={i + 2} />
+        ))}
+      </div>
+    </div>
+    <h3 class="sub">Also live</h3>
+    <ul role="list" class="tiles">
+      {tiles.map(
+        (p) =>
+          p && (
+            <li>
+              <ProjectShowcase project={p} layout="tile" headingLevel="h4" />
+            </li>
+          ),
+      )}
     </ul>
   </section>
 
-  <!-- 5. Running systems (build-time snapshot; omitted when no snapshot exists) -->
-  <StatusPanel />
+  <!-- 3. What I'm committing: a dated snapshot of public activity -->
+  {activity && (
+    <section class="section container" aria-labelledby="activity">
+      <div class="section-head">
+        <h2 class="section-label" id="activity">
+          Build activity
+        </h2>
+        <a href="/code" class="all">
+          Code <Icon name="arrow-right" size={14} />
+        </a>
+      </div>
+      <p class="total">
+        <strong>{activity.total}</strong> commits across {activity.repos.length} public repositories in the
+        last {activity.weeks} weeks
+      </p>
+      <ActivityGraph />
+      <h3 class="sub">Recently committed to</h3>
+      <RepoList recent={3} />
+    </section>
+  )}
 
-  <!-- 6. Experience -->
+  <!-- 4. What I use: compact inventory, evidence on demand -->
+  <section class="section container" aria-labelledby="skills">
+    <div class="section-head">
+      <h2 class="section-label" id="skills">
+        Skills
+      </h2>
+      <a href="/skills" class="all">
+        Full inventory <Icon name="arrow-right" size={14} />
+      </a>
+    </div>
+    <p class="intro">Every tool links to where I used it: a project, the internship or a certification.</p>
+    <SkillsInventory />
+  </section>
+
+  <!-- 5. Proof outside my own repositories: experience and credentials -->
   <section class="section container" aria-labelledby="experience">
     <h2 class="section-label" id="experience">
       Experience
@@ -219,16 +235,7 @@ const jsonLd = [
     </p>
   </section>
 
-  <!-- 7. Events & hackathons -->
-  <section class="section container" aria-labelledby="events">
-    <h2 class="section-label" id="events">
-      Events &amp; hackathons
-    </h2>
-    <p class="intro">Where I build and learn outside my own repositories.</p>
-    <EventList />
-  </section>
-
-  <!-- 8. Contact -->
+  <!-- 6. Contact -->
   <section class="section container" aria-labelledby="contact">
     <h2 class="section-label" id="contact">
       Contact
@@ -252,26 +259,300 @@ const jsonLd = [
 </BaseLayout>
 
 <style>
-  .hero {
-    padding-block: var(--space-8) var(--space-9);
-  }
-  /* Two columns from 900px up: copy left, portrait right. Below that the portrait follows the copy. */
+  /* Hero: copy left, portrait right from 900px; the three disciplines run across the bottom of the first screen */
   .hero {
     display: grid;
     gap: var(--space-7);
+    padding-block: var(--space-7) var(--space-8);
   }
   @media (min-width: 900px) {
     .hero {
-      grid-template-columns: minmax(0, 1fr) clamp(15rem, 30vw, 26rem);
+      grid-template-columns: minmax(0, 1fr) clamp(15rem, 28vw, 24rem);
       align-items: center;
-      column-gap: var(--space-7);
+      column-gap: var(--space-8);
+      row-gap: var(--space-8);
     }
   }
   @media (min-width: 1024px) {
     .hero {
-      padding-block: var(--space-11) var(--space-10);
-      column-gap: var(--space-9);
+      padding-block: var(--space-9) var(--space-9);
+      column-gap: var(--space-10);
     }
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--lh-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .hero h1 {
+    margin-top: var(--space-3);
+    font-size: var(--text-name);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+  }
+  .statement {
+    margin-top: var(--space-4);
+    font-size: var(--text-hero);
+    line-height: var(--lh-hero);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    max-width: 30ch;
+  }
+  .lead {
+    margin-top: var(--space-4);
+    font-size: var(--text-base);
+    line-height: var(--lh-base);
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+  .lead strong {
+    color: var(--ink);
+  }
+  .status-line {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1) var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  @media (min-width: 640px) {
+    .status-line {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .status-line span + span::before {
+      content: '·';
+      margin-right: var(--space-4);
+      color: var(--rule-strong);
+    }
+  }
+  .actions {
+    margin-top: var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--target);
+    padding-inline: var(--space-4);
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-1);
+    color: var(--ink);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      border-color var(--dur-fast) var(--ease),
+      background-color var(--dur-fast) var(--ease);
+  }
+  .button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .button:hover {
+      border-color: var(--ink-3);
+      color: var(--ink);
+    }
+    .button.primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      color: var(--on-accent);
+    }
+  }
+  /* System bus: the disciplines' top rules form one line with a node at each, and a packet crosses it every ~11 s.
+     Transform and opacity only; no JavaScript. Reduced motion: no packet, the line and nodes stay. */
+  .system {
+    grid-column: 1 / -1;
+    position: relative;
+  }
+  .bus {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .track {
+    position: absolute;
+    inset: 0;
+    animation: bus-travel 11s linear infinite;
+    animation-delay: 1.5s;
+    transform: translateX(calc(-100% - 4rem));
+  }
+  .packet {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    width: 4rem;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--accent));
+  }
+  @keyframes bus-travel {
+    0% {
+      transform: translateX(calc(-100% - 4rem));
+    }
+    55%,
+    100% {
+      transform: translateX(4rem);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .track {
+      animation-name: none;
+      display: none;
+    }
+  }
+  .pillars {
+    position: relative;
+    display: grid;
+    gap: var(--space-2);
+  }
+  @media (min-width: 768px) {
+    .pillars {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+  }
+  /* A node on the bus at the start of each discipline */
+  .pillars a::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -3px;
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 1.5px solid var(--ink);
+    background: var(--bg);
+    z-index: 2;
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+  .pillars a {
+    position: relative;
+    display: grid;
+    gap: 0.125rem;
+    padding: var(--space-3) var(--space-6) var(--space-3) 0;
+    border-top: 2px solid var(--ink);
+    color: var(--ink);
+    text-decoration: none;
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--accent);
+  }
+  .pillar-name {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    font-weight: 600;
+  }
+  .pillar-tools {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--lh-xs);
+    color: var(--ink-3);
+  }
+  .pillars :global(.pillar-arrow) {
+    position: absolute;
+    right: 0;
+    top: var(--space-4);
+    color: var(--ink-3);
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .pillars a:hover {
+      border-top-color: var(--accent);
+    }
+    .pillars a:hover::before {
+      border-color: var(--accent);
+    }
+    .pillars a:hover :global(.pillar-arrow) {
+      color: var(--accent);
+      transform: translateX(3px);
+    }
+  }
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+  .section-head .section-label {
+    margin-bottom: 0;
+  }
+  .all,
+  .more a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+    font-size: var(--text-sm);
+  }
+  .showcase-grid {
+    display: grid;
+    gap: var(--space-9);
+  }
+  .pair {
+    display: grid;
+    gap: var(--space-9);
+  }
+  @media (min-width: 900px) {
+    .pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-7);
+    }
+  }
+  .sub {
+    margin-top: var(--space-9);
+    margin-bottom: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--lh-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+  .tiles {
+    display: grid;
+    gap: var(--space-6);
+  }
+  @media (min-width: 640px) {
+    .tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .tiles {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .total {
+    margin-bottom: var(--space-5);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .total strong {
+    font-family: var(--font-sans);
+    font-size: var(--text-2xl);
+    line-height: 1;
+    color: var(--ink);
+    margin-right: var(--space-2);
   }
   /* Editorial treatment: grayscale, cool-tinted from the ink token, and faded into the page at its edges so the
      image reads as part of the page rather than as a card. */
@@ -331,134 +612,7 @@ const jsonLd = [
       object-position: 50% 50%;
     }
   }
-  /* The job title: the first thing a recruiter looks for, kept well below the headline in size and weight */
-  .role {
-    margin-top: var(--space-2);
-    padding-left: var(--space-3);
-    border-left: 2px solid var(--accent);
-    font-size: var(--text-base);
-    line-height: var(--lh-md);
-    font-weight: 600;
-    color: var(--ink);
-  }
-  @media (min-width: 640px) {
-    .role {
-      font-size: var(--text-md);
-    }
-  }
-  .hero h1 {
-    margin-top: var(--space-5);
-    font-size: var(--text-hero);
-    line-height: var(--lh-hero);
-    letter-spacing: -0.015em;
-    max-width: 30ch;
-  }
-  .lead {
-    margin-top: var(--space-5);
-    font-size: var(--text-md);
-    line-height: var(--lh-md);
-    color: var(--ink-2);
-    max-width: var(--measure-lead);
-  }
-  .lead strong {
-    color: var(--ink);
-  }
-  .status-line {
-    margin-top: var(--space-5);
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--ink-3);
-    flex-direction: column;
-  }
-  @media (min-width: 640px) {
-    .status-line {
-      flex-direction: row;
-    }
-    .status-line span + span::before {
-      content: '·';
-      margin-right: var(--space-4);
-      color: var(--rule-strong);
-    }
-  }
-  .proof {
-    margin-top: var(--space-6);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-1) var(--space-5);
-    font-size: var(--text-sm);
-  }
-  .proof li:first-child,
-  .proof li:last-child {
-    grid-column: 1 / -1;
-  }
-  .proof :global(a) {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-height: var(--target);
-  }
-  .proof-primary {
-    font-weight: 600;
-  }
-  @media (min-width: 640px) {
-    .proof {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-  }
-  .cards {
-    display: grid;
-    gap: var(--space-5);
-  }
-  .principles {
-    display: grid;
-    gap: var(--space-6);
-  }
-  .principles h3 {
-    font-size: var(--text-md);
-    line-height: var(--lh-md);
-  }
-  .principles p {
-    margin-top: var(--space-2);
-    color: var(--ink-2);
-    max-width: var(--measure);
-  }
-  .principles a,
-  .more a,
-  .all {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-height: var(--target);
-    margin-top: var(--space-1);
-    font-size: var(--text-sm);
-  }
-  @media (min-width: 1024px) {
-    .principles {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-6);
-    }
-    .principles li {
-      border-top: var(--hairline) solid var(--rule-strong);
-      padding-top: var(--space-4);
-    }
-  }
-  .section-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-4);
-  }
-  .section-head .all {
-    margin-top: 0;
-  }
-  .rows {
-    display: grid;
-  }
+
   .experience {
     display: grid;
     gap: var(--space-7);

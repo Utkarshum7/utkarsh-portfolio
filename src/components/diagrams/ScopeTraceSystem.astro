@@ -3,15 +3,87 @@
  * ScopeTrace system diagram. Wide and narrow variants; only one is displayed.
  * Facts shown are limited to verified architecture (st.stack, st.queues, st.gateway, st.demomode).
  */
+import Icon from '../site/Icon.astro';
+
 interface Props {
   figure?: number;
+  /** Wide drawing only, as a project preview (no caption, explorer or text version) */
+  preview?: boolean;
+  /** Accessible name when used as a preview */
+  label?: string;
 }
-const { figure = 1 } = Astro.props;
+const { figure = 1, preview = false, label = 'ScopeTrace architecture' } = Astro.props;
 const capId = 'fig-scopetrace-system';
+
+/* Component explorer. Every sentence restates the case study below it; nothing here is new evidence. */
+const parts = [
+  {
+    id: 'web',
+    name: 'Web app',
+    sub: 'React · Vite',
+    role: 'Where an analyst uploads source data and records are reviewed and approved. The public demo runs on Vercel.',
+    href: '#the-system-at-a-glance',
+  },
+  {
+    id: 'api',
+    name: 'API',
+    sub: 'Django REST · gunicorn',
+    role: 'Stores each upload in object storage, records an upload batch and hands the work to the workers. Every workflow transition is permission-checked and written to the audit log.',
+    href: '#where-deterministic-code-decides',
+  },
+  {
+    id: 'workers',
+    name: 'Workers',
+    sub: 'Celery · scheduler',
+    role: 'Parse and validate each row, then compute CO₂e from versioned, date-effective emission factors, on dedicated queues. In the public demo, one setting runs the same task chain in-process.',
+    href: '#running-it-deployment-and-operations',
+  },
+  {
+    id: 'gateway',
+    name: 'AI gateway',
+    sub: 'invoke_ai()',
+    role: 'The only path to a model. It checks policy, budget and data egress before the call, validates the response against a schema after it, and writes an audit record. A row lock keeps budgets correct under concurrency.',
+    href: '#decision-one-gateway-for-every-ai-call',
+  },
+  {
+    id: 'providers',
+    name: 'Model providers',
+    sub: 'Anthropic · OpenAI · demo',
+    role: 'Only the gateway talks to them. The public demo uses a deterministic provider that makes no network calls.',
+    href: '#evaluating-the-ai-layer',
+  },
+  {
+    id: 'postgres',
+    name: 'PostgreSQL',
+    sub: 'records · audit log',
+    role: 'Records, their workflow state and the hash-chained audit log. The concurrency guarantees depend on its row locks, so CI runs the suite against PostgreSQL.',
+    href: '#the-hard-part-budgets-that-hold-under-concurrency',
+  },
+  {
+    id: 'redis',
+    name: 'Redis',
+    sub: 'broker · cache',
+    role: 'The Celery broker and the cache. CI runs against a Redis service container.',
+    href: '#testing-and-ci',
+  },
+  {
+    id: 'storage',
+    name: 'Object storage',
+    sub: 'S3-compatible',
+    role: 'Holds the uploaded source files.',
+    href: '#the-system-at-a-glance',
+  },
+];
 ---
 
-<figure class="diagram">
-  <svg class="wide" viewBox="0 0 880 250" role="img" aria-labelledby={capId}>
+<figure class:list={['diagram', { preview }]} id={preview ? undefined : 'scopetrace-diagram'}>
+  <svg
+    class="wide"
+    viewBox="0 0 880 250"
+    role="img"
+    aria-labelledby={preview ? undefined : capId}
+    aria-label={preview ? label : undefined}
+  >
     <defs>
       <marker
         id="st-arrow"
@@ -44,7 +116,7 @@ const capId = 'fig-scopetrace-system';
     </text>
 
     <!-- nodes -->
-    <g class="node">
+    <g class="node" data-node="web">
       <rect x="14" y="40" width="148" height="56" rx="2"></rect>
       <text x="28" y="64">
         Web app
@@ -53,7 +125,7 @@ const capId = 'fig-scopetrace-system';
         React · Vite
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="api">
       <rect x="208" y="40" width="190" height="56" rx="2"></rect>
       <text x="222" y="64">
         API
@@ -62,7 +134,7 @@ const capId = 'fig-scopetrace-system';
         Django REST · gunicorn
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="workers">
       <rect x="450" y="40" width="162" height="56" rx="2"></rect>
       <text x="464" y="64">
         Workers
@@ -71,7 +143,7 @@ const capId = 'fig-scopetrace-system';
         Celery · scheduler
       </text>
     </g>
-    <g class="node critical">
+    <g class="node critical" data-node="gateway">
       <rect x="272" y="156" width="378" height="60" rx="2"></rect>
       <text x="286" y="180">
         AI gateway: invoke_ai()
@@ -80,7 +152,7 @@ const capId = 'fig-scopetrace-system';
         policy · budget · egress · schema · audit record
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="providers">
       <rect x="14" y="158" width="212" height="56" rx="2"></rect>
       <text x="28" y="182">
         Model providers
@@ -89,13 +161,13 @@ const capId = 'fig-scopetrace-system';
         Anthropic · OpenAI · demo
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="postgres">
       <rect x="710" y="44" width="140" height="44" rx="2"></rect>
       <text x="724" y="71">
         PostgreSQL
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="redis">
       <rect x="710" y="102" width="140" height="44" rx="2"></rect>
       <text x="724" y="122">
         Redis
@@ -104,7 +176,7 @@ const capId = 'fig-scopetrace-system';
         broker · cache
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="storage">
       <rect x="710" y="160" width="140" height="44" rx="2"></rect>
       <text x="724" y="180">
         Object storage
@@ -132,7 +204,13 @@ const capId = 'fig-scopetrace-system';
     <path class="edge" d="M676 182H708" marker-end="url(#st-arrow)"></path>
   </svg>
 
-  <svg class="narrow" viewBox="0 0 340 520" role="img" aria-labelledby={capId}>
+  <svg
+    class="narrow"
+    viewBox="0 0 340 520"
+    role="img"
+    aria-labelledby={preview ? undefined : capId}
+    aria-label={preview ? label : undefined}
+  >
     <defs>
       <marker
         id="st-arrow-n"
@@ -157,7 +235,7 @@ const capId = 'fig-scopetrace-system';
         <path d="M0 0 10 5 0 10z" class="head-accent"></path>
       </marker>
     </defs>
-    <g class="node">
+    <g class="node" data-node="web">
       <rect x="20" y="10" width="300" height="52" rx="2"></rect>
       <text x="34" y="32">
         Web app
@@ -166,7 +244,7 @@ const capId = 'fig-scopetrace-system';
         React · Vite
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="api">
       <rect x="20" y="92" width="300" height="52" rx="2"></rect>
       <text x="34" y="114">
         API
@@ -175,7 +253,7 @@ const capId = 'fig-scopetrace-system';
         Django REST · gunicorn
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="workers">
       <rect x="20" y="174" width="300" height="52" rx="2"></rect>
       <text x="34" y="196">
         Workers
@@ -184,7 +262,7 @@ const capId = 'fig-scopetrace-system';
         Celery · scheduler
       </text>
     </g>
-    <g class="node critical">
+    <g class="node critical" data-node="gateway">
       <rect x="20" y="256" width="300" height="56" rx="2"></rect>
       <text x="34" y="279">
         AI gateway: invoke_ai()
@@ -193,7 +271,7 @@ const capId = 'fig-scopetrace-system';
         policy · budget · egress · schema
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="providers">
       <rect x="20" y="342" width="300" height="52" rx="2"></rect>
       <text x="34" y="364">
         Model providers
@@ -206,19 +284,19 @@ const capId = 'fig-scopetrace-system';
     <text class="group-label" x="24" y="438">
       DATA · READ AND WRITTEN BY API AND WORKERS
     </text>
-    <g class="node">
+    <g class="node" data-node="postgres">
       <rect x="24" y="450" width="92" height="48" rx="2"></rect>
       <text x="34" y="479">
         PostgreSQL
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="redis">
       <rect x="124" y="450" width="92" height="48" rx="2"></rect>
       <text x="134" y="479">
         Redis
       </text>
     </g>
-    <g class="node">
+    <g class="node" data-node="storage">
       <rect x="224" y="450" width="92" height="48" rx="2"></rect>
       <text x="234" y="472">
         Object
@@ -232,35 +310,97 @@ const capId = 'fig-scopetrace-system';
     <path class="edge" d="M170 226V254" marker-end="url(#st-arrow-n)"></path>
     <path class="edge critical" d="M170 312V340" marker-end="url(#st-arrow-n-accent)"></path>
   </svg>
-
-  <figcaption id={capId}>
-    Fig. {figure}. ScopeTrace's designed topology. Every model call crosses one boundary, the AI gateway
-    (highlighted). The API and workers read and write the data stores; in the public demo, worker tasks run
-    in-process.
-  </figcaption>
-  <details>
-    <summary>Diagram as text</summary>
-    <ol>
-      <li>The web app (React) calls the API (Django REST Framework under gunicorn).</li>
-      <li>
-        The API stores uploads in S3-compatible object storage and hands work to Celery workers through Redis.
-      </li>
-      <li>The API and workers read and write PostgreSQL; Redis is also the cache.</li>
-      <li>
-        Any AI call from the API or the workers goes through the AI gateway, which checks policy, budget and
-        data egress, validates the response against a schema and writes an audit record.
-      </li>
-      <li>
-        Only the gateway talks to model providers (Anthropic, OpenAI, or a deterministic demo provider).
-      </li>
-    </ol>
-  </details>
+  {!preview && (
+    <>
+      <figcaption id={capId}>
+        Fig. {figure}. ScopeTrace's designed topology. Every model call crosses one boundary, the AI gateway
+        (highlighted). The API and workers read and write the data stores; in the public demo, worker tasks
+        run in-process.
+      </figcaption>
+      <div class="explore">
+        <p class="explore-label" id="st-explore-label">
+          Components: open one to highlight it and see its role
+        </p>
+        <ul role="list" aria-labelledby="st-explore-label">
+          {parts.map((p) => (
+            <li>
+              <details name="st-component" data-explain={p.id}>
+                <summary>
+                  <span class="part-name">{p.name}</span>
+                  <span class="part-sub">{p.sub}</span>
+                  <Icon name="chevron-down" size={14} class="chev" />
+                </summary>
+                <p>
+                  {p.role} <a href={p.href}>Read more</a>
+                  <span class="show-in-diagram">
+                    {' · '}
+                    <a href="#scopetrace-diagram">
+                      Show in diagram<span class="visually-hidden">: {p.name} is highlighted</span>
+                    </a>
+                  </span>
+                </p>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <details>
+        <summary>Diagram as text</summary>
+        <ol>
+          <li>The web app (React) calls the API (Django REST Framework under gunicorn).</li>
+          <li>
+            The API stores uploads in S3-compatible object storage and hands work to Celery workers through
+            Redis.
+          </li>
+          <li>The API and workers read and write PostgreSQL; Redis is also the cache.</li>
+          <li>
+            Any AI call from the API or the workers goes through the AI gateway, which checks policy, budget
+            and data egress, validates the response against a schema and writes an audit record.
+          </li>
+          <li>
+            Only the gateway talks to model providers (Anthropic, OpenAI, or a deterministic demo provider).
+          </li>
+        </ol>
+      </details>
+    </>
+  )}
 </figure>
+
+<script>
+  // Progressive enhancement: clicking a node in the diagram opens its explanation below.
+  // Without this script the explanations are still a keyboard-operable list.
+  for (const fig of document.querySelectorAll<HTMLElement>('.diagram:not(.preview)')) {
+    fig.classList.add('explorable');
+    fig.addEventListener('click', (e) => {
+      const node = (e.target as Element).closest<SVGGElement>('[data-node]');
+      const item = node && fig.querySelector<HTMLDetailsElement>(`[data-explain="${node.dataset.node}"]`);
+      if (!item) return;
+      item.open = !item.open;
+      if (item.open) item.querySelector('summary')?.focus({ preventScroll: true });
+    });
+  }
+</script>
 
 <style>
   .diagram {
     margin-block: var(--space-6);
     container-type: inline-size;
+  }
+  /* Preview (project showcase): always the wide drawing, scaled to its frame */
+  .preview {
+    margin: 0;
+  }
+  /* As a preview: the vertical drawing in narrow frames (phones), the wide one from 30rem */
+  .preview .narrow {
+    max-width: 18rem;
+  }
+  @container (min-width: 30rem) {
+    .preview .wide {
+      display: block;
+    }
+    .preview .narrow {
+      display: none;
+    }
   }
   svg {
     width: 100%;
@@ -301,6 +441,115 @@ const capId = 'fig-scopetrace-system';
     fill: var(--surface);
     stroke: var(--rule-strong);
     stroke-width: 1;
+    transition:
+      stroke var(--dur-fast) var(--ease),
+      fill var(--dur-fast) var(--ease);
+  }
+  .node {
+    transition: opacity var(--dur-disclosure) var(--ease);
+  }
+  .explorable .node {
+    cursor: pointer;
+  }
+  /* One component open: it is outlined in the accent, the others step back. CSS only (:has). */
+  .diagram:has([data-explain][open]) .node {
+    opacity: 0.45;
+  }
+  .diagram:has([data-explain='web'][open]) [data-node='web'],
+  .diagram:has([data-explain='api'][open]) [data-node='api'],
+  .diagram:has([data-explain='workers'][open]) [data-node='workers'],
+  .diagram:has([data-explain='gateway'][open]) [data-node='gateway'],
+  .diagram:has([data-explain='providers'][open]) [data-node='providers'],
+  .diagram:has([data-explain='postgres'][open]) [data-node='postgres'],
+  .diagram:has([data-explain='redis'][open]) [data-node='redis'],
+  .diagram:has([data-explain='storage'][open]) [data-node='storage'] {
+    opacity: 1;
+  }
+  .diagram:has([data-explain='web'][open]) [data-node='web'] rect,
+  .diagram:has([data-explain='api'][open]) [data-node='api'] rect,
+  .diagram:has([data-explain='workers'][open]) [data-node='workers'] rect,
+  .diagram:has([data-explain='gateway'][open]) [data-node='gateway'] rect,
+  .diagram:has([data-explain='providers'][open]) [data-node='providers'] rect,
+  .diagram:has([data-explain='postgres'][open]) [data-node='postgres'] rect,
+  .diagram:has([data-explain='redis'][open]) [data-node='redis'] rect,
+  .diagram:has([data-explain='storage'][open]) [data-node='storage'] rect {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    fill: var(--accent-soft);
+  }
+  .explore {
+    margin-top: var(--space-4);
+  }
+  .explore-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--lh-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: var(--space-2);
+  }
+  .explore ul {
+    display: grid;
+    column-gap: var(--space-5);
+    border-bottom: var(--hairline) solid var(--rule);
+  }
+  @container (min-width: 36rem) {
+    .explore ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+  }
+  /* The figure sits inside .prose, whose list spacing doesn't apply to this grid */
+  .explore li {
+    margin-top: 0;
+  }
+  /* In the narrow (vertical) layout the drawing can be above the screen while an explanation is open: a plain
+     anchor jumps back to it (the opened component stays highlighted). Not needed when the wide drawing shows. */
+  .diagram:not(.preview) {
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  @container (min-width: 43rem) {
+    .show-in-diagram {
+      display: none;
+    }
+  }
+  .explore details {
+    border-top: var(--hairline) solid var(--rule);
+    margin-top: 0;
+  }
+  .explore summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    min-height: var(--target);
+    padding-block: var(--space-2);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .explore details[open] summary {
+    color: var(--accent);
+  }
+  .explore summary :global(.chev) {
+    margin-left: auto;
+    align-self: center;
+    color: var(--ink-3);
+    transition: transform var(--dur-disclosure) var(--ease);
+  }
+  .explore details[open] summary :global(.chev) {
+    transform: rotate(180deg);
+  }
+  .part-sub {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    font-weight: 400;
+    color: var(--ink-3);
+  }
+  .explore details p {
+    padding-bottom: var(--space-3);
+    color: var(--ink-2);
+    line-height: var(--lh-sm);
   }
   .node.critical rect {
     stroke: var(--accent);

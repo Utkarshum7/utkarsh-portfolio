@@ -1,0 +1,284 @@
+---
+/**
+ * Compact engineering inventory (home). One line per discipline; every tool is a link to its evidence on /skills.
+ * With JavaScript, a tool opens that evidence here instead: the entry is read from /skills (same origin, fetched
+ * once), so the evidence text isn't duplicated in this page's HTML. Without JavaScript the links simply navigate.
+ */
+import { disciplines, frontendAndTooling, type Tech } from '../../data/toolkit';
+import marks from '../../assets/tech-marks.svg?url';
+import Icon from '../site/Icon.astro';
+
+const cloud = disciplines.find((d) => d.id === 'cloud')!;
+const rows: { index: string; label: string; href: string; items: Tech[] }[] = [
+  ...disciplines.map((d) => ({
+    index: d.index,
+    label: d.title,
+    href: `/skills#discipline-${d.id}`,
+    items: d.groups.filter((g) => !(d.id === 'cloud' && g.label === 'Observability')).flatMap((g) => g.items),
+  })),
+  {
+    index: '',
+    label: 'Observability',
+    href: '/skills#discipline-cloud',
+    items: cloud.groups.find((g) => g.label === 'Observability')?.items ?? [],
+  },
+  { index: '', label: 'Front-end & tooling', href: '/skills#discipline-tooling', items: frontendAndTooling },
+];
+---
+
+<div class="inventory" data-inventory>
+  {rows.map((r) => (
+    <div class="row">
+      <p class="label">
+        {r.index && <span class="index">{r.index}</span>}
+        <a href={r.href}>{r.label}</a>
+      </p>
+      <ul role="list" class="chips">
+        {r.items.map((t) => (
+          <li>
+            <a class="chip" href={`/skills#tech-${t.id}`} data-tech={t.id}>
+              {'icon' in t.mark ? (
+                <svg class="mark" width="16" height="16" aria-hidden="true" focusable="false">
+                  <use href={`${marks}#${t.mark.icon}`} />
+                </svg>
+              ) : (
+                <span class="mark text" aria-hidden="true">
+                  {t.mark.text}
+                </span>
+              )}
+              <span class="name">{t.name}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+  <div class="evidence" data-evidence hidden>
+    <div class="evidence-head">
+      <p class="evidence-title" data-evidence-title></p>
+      <button type="button" class="close" data-evidence-close>
+        Close<span class="visually-hidden"> evidence</span>
+      </button>
+    </div>
+    <div class="evidence-body" data-evidence-body></div>
+  </div>
+</div>
+
+<script>
+  // Upgrade tool links to disclosure buttons; the evidence comes from the /skills page (fetched once, same origin).
+  const root = document.querySelector<HTMLElement>('[data-inventory]');
+  if (root) {
+    const panel = root.querySelector<HTMLElement>('[data-evidence]')!;
+    const title = root.querySelector<HTMLElement>('[data-evidence-title]')!;
+    const body = root.querySelector<HTMLElement>('[data-evidence-body]')!;
+    let page: Promise<Document> | null = null;
+    let open: HTMLButtonElement | null = null;
+    const load = () =>
+      (page ??= fetch('/skills')
+        .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
+        .then((html) => new DOMParser().parseFromString(html, 'text/html')));
+
+    const close = () => {
+      open?.setAttribute('aria-expanded', 'false');
+      panel.hidden = true;
+      open = null;
+    };
+
+    root.querySelectorAll<HTMLAnchorElement>('a.chip').forEach((a) => {
+      const button = document.createElement('button');
+      // Keep every attribute (class, scoped-style attribute, data-tech) except the link target
+      for (const at of a.attributes) if (at.name !== 'href') button.setAttribute(at.name, at.value);
+      button.type = 'button';
+      button.dataset.href = a.href;
+      button.setAttribute('aria-expanded', 'false');
+      button.setAttribute('aria-controls', 'inventory-evidence');
+      button.append(...a.childNodes);
+      a.replaceWith(button);
+      button.addEventListener('click', async () => {
+        if (open === button) return close();
+        close();
+        try {
+          const doc = await load();
+          const entry = doc.getElementById(`tech-${button.dataset.tech}`);
+          const uses = entry?.querySelector('.uses');
+          if (!uses) throw new Error('missing');
+          title.textContent = `${button.textContent?.trim()}: where I used it`;
+          body.replaceChildren(...[...uses.childNodes].map((n) => document.importNode(n, true)));
+          button.closest('.row')!.after(panel);
+          panel.hidden = false;
+          button.setAttribute('aria-expanded', 'true');
+          open = button;
+        } catch {
+          location.href = button.dataset.href!; // fall back to the full evidence page
+        }
+      });
+    });
+    panel.id = 'inventory-evidence';
+    root.querySelector('[data-evidence-close]')!.addEventListener('click', () => {
+      const was = open;
+      close();
+      was?.focus();
+    });
+  }
+</script>
+
+<style>
+  .inventory {
+    display: grid;
+    border-top: var(--hairline) solid var(--rule-strong);
+  }
+  .row {
+    display: grid;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+    border-bottom: var(--hairline) solid var(--rule);
+  }
+  @media (min-width: 900px) {
+    .row {
+      grid-template-columns: 14rem minmax(0, 1fr);
+      gap: var(--space-5);
+      align-items: start;
+    }
+  }
+  .label {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+  .label a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .label a:hover {
+      text-decoration: underline;
+    }
+  }
+  .index {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--accent);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--target);
+    padding: 0 var(--space-3) 0 var(--space-2);
+    border: var(--hairline) solid var(--rule);
+    border-radius: var(--radius-1);
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      border-color var(--dur-fast) var(--ease),
+      color var(--dur-fast) var(--ease);
+  }
+  .mark {
+    color: var(--ink-2);
+    flex: none;
+  }
+  .mark.text {
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    min-width: 1rem;
+    text-align: center;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .chip:hover {
+      border-color: var(--ink-3);
+    }
+  }
+  .chip[aria-expanded='true'] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .chip[aria-expanded='true'] .mark {
+    color: var(--accent);
+  }
+  .evidence {
+    padding: var(--space-4);
+    margin-block: var(--space-2) var(--space-3);
+    border: var(--hairline) solid var(--rule-strong);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius-1);
+    background: var(--surface);
+  }
+  .evidence-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .evidence-title {
+    font-weight: 600;
+  }
+  .close {
+    min-height: var(--target);
+    padding-inline: var(--space-3);
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-1);
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+  /* Evidence markup comes from the /skills page, so it is styled here globally within the panel */
+  .evidence-body :global(ul) {
+    display: grid;
+    margin-top: var(--space-2);
+  }
+  @media (min-width: 900px) {
+    .evidence-body :global(ul) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--space-6);
+    }
+  }
+  .evidence-body :global(li) {
+    display: grid;
+    gap: 0.125rem;
+    padding-block: var(--space-2);
+    border-top: var(--hairline) dashed var(--rule);
+  }
+  .evidence-body :global(.kind) {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .evidence-body :global(li a) {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    justify-self: start;
+  }
+  .evidence-body :global(.note) {
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    color: var(--ink-2);
+  }
+  .evidence-body :global(.filter) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+    font-size: var(--text-sm);
+  }
+  .evidence-body :global(.filter svg) {
+    width: 14px;
+    height: 14px;
+  }
+</style>

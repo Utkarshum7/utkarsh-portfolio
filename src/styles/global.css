@@ -41,6 +41,10 @@
   *::after {
     box-sizing: border-box;
   }
+  /* The hidden attribute always hides, even on elements whose component styles set a display value */
+  [hidden] {
+    display: none !important;
+  }
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;

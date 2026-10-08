@@ -8,26 +8,29 @@ import CertList from '../components/content/CertList.astro';
 import Icon from '../components/site/Icon.astro';
 import portrait from '../assets/portrait/utkarsh-amaresh.jpg';
 import { profile } from '../data/profile';
-import { events } from '../data/events';
+import EventList from '../components/content/EventList.astro';
 import { getClaim } from '../lib/claims';
 
 // Rule R4: the owner-confirmed internship and AI statement must be registered claims.
 await getClaim('job.role');
 await getClaim('about.ai-statement');
 
+// Grouped by the three disciplines used across the site (see src/data/toolkit.ts for tool-level evidence).
 const areas = [
   {
-    area: 'Backend services in Python',
-    detail: 'Django, Django REST Framework, FastAPI, PostgreSQL, Redis, Celery',
+    area: 'Backend engineering',
+    detail:
+      'Python, Django and Django REST Framework, FastAPI, PostgreSQL, Redis and Celery; row locking, idempotency and multi-threaded tests',
     where: [
       { label: 'ScopeTrace', href: '/work/scopetrace' },
-      { label: 'Appointment Board', href: '/work#more' },
+      { label: 'Concurrency', href: '/work/scopetrace#the-hard-part-budgets-that-hold-under-concurrency' },
+      { label: 'Appointment Board', href: '/work#appointment-board' },
     ],
   },
   {
     area: 'AI systems',
     detail:
-      'an LLM gateway, schema-validated outputs, retrieval, evaluation against golden sets and baselines',
+      'an LLM gateway, schema-validated outputs, retrieval, evaluation against golden sets and baselines, deterministic guardrails',
     where: [
       { label: 'ScopeTrace', href: '/work/scopetrace' },
       { label: 'Delta Support Intelligence', href: '/work/support-intelligence' },
@@ -35,28 +38,23 @@ const areas = [
     ],
   },
   {
-    area: 'Correctness under concurrency',
-    detail: 'row locking, idempotency, multi-threaded tests',
+    area: 'Cloud & DevOps',
+    detail:
+      'AWS and Google Cloud, Docker, Kubernetes, Terraform, GitHub Actions, Prometheus and Grafana; health checks, request correlation IDs and managed-platform deployments; Oracle Cloud certified',
     where: [
-      { label: 'ScopeTrace', href: '/work/scopetrace#the-hard-part-budgets-that-hold-under-concurrency' },
-    ],
-  },
-  {
-    area: 'Delivery and operations',
-    detail: 'Docker, GitHub Actions CI, health checks, request correlation IDs, PaaS deployments',
-    where: [
-      { label: 'ScopeTrace', href: '/work/scopetrace#running-it-deployment-and-operations' },
-      { label: 'Appointment Board', href: '/work#more' },
-      { label: 'Edge Observability Stack', href: '/work#more' },
+      { label: 'DevOps internship', href: '#experience' },
+      { label: 'ScopeTrace operations', href: '/work/scopetrace#running-it-deployment-and-operations' },
+      { label: 'Kubernetes Notes App', href: '/work#k8s-notes-app-deployment' },
+      { label: 'Edge Observability Stack', href: '/work#edge-observability-stack' },
     ],
   },
   {
     area: 'Front-end when the product needs it',
     detail: 'React, TypeScript, React Native',
     where: [
-      { label: 'RoboFleet Monitor', href: '/work#more' },
-      { label: 'Taskora', href: '/work#more' },
-      { label: 'Apollo Family Clinic', href: '/work#more' },
+      { label: 'RoboFleet Monitor', href: '/work#robofleet-monitor' },
+      { label: 'Taskora', href: '/work#taskora' },
+      { label: 'Apollo Family Clinic', href: '/work#apollo-family-clinic' },
     ],
   },
 ];
@@ -68,6 +66,7 @@ const jsonLd = {
     '@type': 'Person',
     name: profile.name,
     jobTitle: 'Backend engineer',
+    knowsAbout: ['Backend engineering', 'AI systems', 'Cloud infrastructure', 'DevOps'],
     address: { '@type': 'PostalAddress', addressLocality: 'Bengaluru', addressCountry: 'IN' },
     alumniOf: { '@type': 'CollegeOrUniversity', name: 'RV College of Engineering' },
     sameAs: [profile.github, profile.linkedin],
@@ -77,7 +76,7 @@ const jsonLd = {
 
 <BaseLayout
   title="About · Utkarsh Amaresh"
-  description="Backend engineer in Bengaluru working on Python services and AI systems: experience, credentials and how I work."
+  description="Backend engineer in Bengaluru working across Python services, AI systems and cloud & DevOps: experience, credentials and how I work."
   ogType="profile"
   jsonLd={jsonLd}
 >
@@ -162,6 +161,11 @@ const jsonLd = {
           </div>
         ))}
       </dl>
+      <p class="more">
+        <a href="/skills">
+          Every tool, with where I used it <Icon name="arrow-right" size={14} />
+        </a>
+      </p>
     </section>
 
     <section class="section" aria-labelledby="credentials">
@@ -206,22 +210,12 @@ const jsonLd = {
       </p>
     </section>
 
-    <section class="section" aria-labelledby="events-about">
-      <h2 class="section-label" id="events-about">
+    <section class="section" aria-labelledby="events">
+      <h2 class="section-label" id="events">
         Events &amp; hackathons
       </h2>
-      <ul role="list" class="event-names">
-        {events.map((e) => (
-          <li>
-            <span class="event-name">{e.name}</span> <span class="when">{e.when}</span>
-          </li>
-        ))}
-      </ul>
-      <p class="more">
-        <a href="/#events">
-          Details and photos <Icon name="arrow-right" size={14} />
-        </a>
-      </p>
+      <p class="events-intro">Where I build and learn outside my own repositories.</p>
+      <EventList />
     </section>
 
     <section class="section" aria-labelledby="contact">
@@ -352,12 +346,10 @@ const jsonLd = {
     max-width: var(--measure);
     color: var(--ink-2);
   }
-  .event-names {
-    display: grid;
-    gap: var(--space-2);
-  }
-  .event-name {
-    font-weight: 600;
+  .events-intro {
+    color: var(--ink-2);
+    max-width: var(--measure);
+    margin-bottom: var(--space-4);
   }
   .more a {
     display: inline-flex;

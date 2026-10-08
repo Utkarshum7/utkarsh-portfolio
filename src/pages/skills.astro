@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Toolkit from '../components/content/Toolkit.astro';
+---
+
+<BaseLayout
+  title="Skills · Utkarsh Amaresh"
+  description="An engineering inventory across backend, AI systems and cloud & DevOps, with where each tool was used: projects, internship, certifications and this site."
+>
+  <div class="container intro">
+    <p class="eyebrow">Skills</p>
+    <h1>An inventory, with the evidence attached.</h1>
+    <p class="lead">
+      Every tool here links to where I used it. No ratings or years: a project you can open, the internship, a
+      certification, or this site. Tools I can't point to evidence for aren't listed.
+    </p>
+  </div>
+  <Toolkit />
+</BaseLayout>
+
+<script>
+  // Deep links such as /skills#tech-docker open that tool's evidence (from the home inventory or a shared URL).
+  const openFromHash = () => {
+    const el = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (el instanceof HTMLDetailsElement) {
+      el.open = true;
+      el.querySelector('summary')?.focus({ preventScroll: true });
+    }
+  };
+  openFromHash();
+  addEventListener('hashchange', openFromHash);
+</script>
+
+<style>
+  .intro {
+    padding-block: var(--space-8) var(--space-6);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin-top: var(--space-2);
+    max-width: 24ch;
+  }
+  .lead {
+    margin-top: var(--space-4);
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+</style>

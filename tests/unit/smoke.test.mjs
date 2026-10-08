@@ -26,6 +26,8 @@ function site(overrides = {}) {
     '/work/scopetrace': page('/work/scopetrace', DEMO),
     '/work/support-intelligence': page('/work/support-intelligence'),
     '/work/resume-screener': page('/work/resume-screener'),
+    '/code': page('/code'),
+    '/skills': page('/skills'),
     '/about': page('/about'),
     '/colophon': page('/colophon'),
     '/sitemap-index.xml': '<loc>x</loc>',

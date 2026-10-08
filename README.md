@@ -30,6 +30,7 @@ npm run preview    # serve the production build
 | `npm run check:boundary` | Fails if private material, secrets, local paths or build/test output would be committed            |
 | `npm run smoke`          | Post-deployment smoke test against a live origin (see below)                                       |
 | `npm run status`         | Checks the deployed demos and writes the build-time snapshot shown under "Running systems"         |
+| `node scripts/github-activity.mjs` | Refreshes the build-activity snapshot (`src/data/activity.json`) from the public GitHub API, no token; commit the result |
 | `npm run og`             | Re-renders the social-share image (`public/og/default.png`)                                        |
 | `npm run format`         | Prettier                                                                                           |
 

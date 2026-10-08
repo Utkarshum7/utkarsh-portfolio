@@ -12,12 +12,46 @@ import ExtLink from '../components/content/ExtLink.astro';
     <h1>Colophon</h1>
     <p class="lead">How this site is built, and the rules it holds itself to.</p>
 
+    <h2 class="visually-hidden" id="built-with">
+      Built with
+    </h2>
+    <dl class="spec">
+      <div>
+        <dt>Framework</dt>
+        <dd>Astro, static output</dd>
+      </div>
+      <div>
+        <dt>Language</dt>
+        <dd>TypeScript (strict), MDX</dd>
+      </div>
+      <div>
+        <dt>Styling</dt>
+        <dd>Plain CSS, design tokens, cascade layers</dd>
+      </div>
+      <div>
+        <dt>Testing</dt>
+        <dd>node:test, Playwright, axe-core, Lighthouse CI</dd>
+      </div>
+      <div>
+        <dt>Delivery</dt>
+        <dd>GitHub Actions, Vercel</dd>
+      </div>
+      <div>
+        <dt>Client JavaScript</dt>
+        <dd>A few small scripts, no framework</dd>
+      </div>
+    </dl>
+
     <div class="prose">
       <h2 id="architecture">Static first</h2>
       <p>
         The site is built with <ExtLink href="https://astro.build/">Astro</ExtLink> as plain static HTML.
         There is no client framework: the only JavaScript is a few small scripts for the theme toggle, the
-        copy-email button and the case-study contents, and every page works without them.
+        copy-email button, the case-study contents, the work filters, showing a tool's evidence on the home
+        page, opening a linked tool on the Skills page and clicking a node in the ScopeTrace diagram, and
+        every page works without them. The Skills page and the ScopeTrace component explorer use plain HTML
+        disclosures, and the one animation on the home page is CSS that stops when reduced motion is
+        requested.
       </p>
 
       <h2 id="content">Typed content</h2>
@@ -77,6 +111,32 @@ import ExtLink from '../components/content/ExtLink.astro';
   }
   .prose {
     margin-top: var(--space-6);
+  }
+  .spec {
+    margin-top: var(--space-6);
+    display: grid;
+    max-width: var(--measure);
+    border-top: var(--hairline) solid var(--rule-strong);
+  }
+  .spec div {
+    display: grid;
+    grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-block: var(--space-2);
+    border-bottom: var(--hairline) solid var(--rule);
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+  }
+  .spec dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    align-self: baseline;
+  }
+  .spec dd {
+    color: var(--ink);
   }
   .prose h2:first-child {
     margin-top: 0;

@@ -10,7 +10,7 @@ const { chromium } = require('@playwright/test');
 const BASE = 'http://127.0.0.1:4330';
 const home = ['/'];
 const caseStudies = ['/work/scopetrace', '/work/support-intelligence', '/work/resume-screener'];
-const other = ['/work', '/about', '/colophon'];
+const other = ['/work', '/code', '/skills', '/about', '/colophon'];
 
 // Prefer Playwright's headless shell (some Windows setups block launching the full chrome.exe from Node)
 function playwrightChrome() {

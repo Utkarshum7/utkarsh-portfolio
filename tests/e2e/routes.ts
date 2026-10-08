@@ -4,6 +4,8 @@ export const ROUTES = [
   { path: '/work/scopetrace', title: /^ScopeTrace/ },
   { path: '/work/support-intelligence', title: /^Delta Support Intelligence/ },
   { path: '/work/resume-screener', title: /^AI Résumé Screener/ },
+  { path: '/code', title: /^Code · / },
+  { path: '/skills', title: /^Skills · / },
   { path: '/about', title: /^About · / },
   { path: '/colophon', title: /^Colophon · / },
 ] as const;

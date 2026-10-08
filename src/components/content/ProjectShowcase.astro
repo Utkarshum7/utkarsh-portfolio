@@ -1,0 +1,324 @@
+---
+/**
+ * Visual project entry: the visual is the anchor, then discipline, name, the one-line engineering idea, stack,
+ * evidence and links. `lead` is the wide two-column version; `card` stacks; `tile` is the small supporting version.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import AreaTags from './AreaTags.astro';
+import Dots from './Dots.astro';
+import EvidenceChip from './EvidenceChip.astro';
+import ExtLink from './ExtLink.astro';
+import Icon from '../site/Icon.astro';
+import ScopeTraceSystem from '../diagrams/ScopeTraceSystem.astro';
+import { visuals } from '../../data/visuals';
+import { techByProject } from '../../data/toolkit';
+import { resolveUrl } from '../../lib/urls';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  layout?: 'lead' | 'card' | 'tile';
+  index?: number;
+  headingLevel?: 'h2' | 'h3' | 'h4';
+}
+const { project, layout = 'card', index, headingLevel = 'h3' } = Astro.props;
+const H = headingLevel;
+const d = project.data;
+const v = visuals[project.id];
+const href = d.caseStudy ? `/work/${project.id}` : `/work#${project.id}`;
+const tech = techByProject().get(project.id) ?? [];
+const sizes =
+  layout === 'lead'
+    ? '(min-width: 900px) 42rem, calc(100vw - 2rem)'
+    : layout === 'card'
+      ? '(min-width: 900px) 36rem, calc(100vw - 2rem)'
+      : '(min-width: 900px) 24rem, calc(100vw - 2rem)';
+const steps = [
+  { n: 'Ingest', s: 'PDF · DOCX' },
+  { n: 'Extract', s: 'fields' },
+  { n: 'Eligibility', s: 'rules' },
+  { n: 'LLM analysis', s: 'schema-checked', llm: true },
+  { n: 'Score', s: 'Python' },
+  { n: 'Rank', s: 'JSON · HTML' },
+];
+---
+
+<article
+  class:list={['showcase', layout]}
+  data-areas={d.areas.join(' ')}
+  data-tech={tech.join(' ')}
+  id={layout === 'tile' ? undefined : `showcase-${project.id}`}
+>
+  {v && (
+    <div class="frame">
+      <p class="bar">{v.caption}</p>
+      <div class:list={['visual', v.kind]}>
+        {v.kind === 'screenshot' && (
+          <Image
+            src={v.image}
+            alt={v.alt}
+            widths={[480, 800, 1200]}
+            sizes={sizes}
+            loading="lazy"
+            decoding="async"
+          />
+        )}
+        {v.kind === 'diagram' && (
+          <ScopeTraceSystem
+            preview
+            label="ScopeTrace architecture: web app, API, workers, the AI gateway, model providers and the data stores"
+          />
+        )}
+        {v.kind === 'pipeline' && (
+          <ol role="list" class="steps" aria-label="Résumé Screener pipeline">
+            {steps.map((st, i) => (
+              <li class:list={{ llm: st.llm }}>
+                <span class="num">{String(i + 1).padStart(2, '0')}</span>
+                <span class="n">{st.n}</span>
+                <span class="s">{st.s}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </div>
+  )}
+  <div class="text">
+    <p class="meta">
+      {index !== undefined && <span class="index">{String(index).padStart(2, '0')}</span>}
+      <AreaTags areas={d.areas} />
+    </p>
+    <H class="title">
+      <a href={href}>{d.title}</a>
+    </H>
+    <p class="idea">{d.summary}</p>
+    {d.stackLine && (
+      <p class="stack">
+        <Dots items={d.stackLine.split(' · ')} />
+      </p>
+    )}
+    {layout !== 'tile' && d.chips.length > 0 && (
+      <ul role="list" class="chips" aria-label="Evidence">
+        {d.chips.map((c) => (
+          <li>
+            <EvidenceChip id={c.id} />
+          </li>
+        ))}
+      </ul>
+    )}
+    <p class="links">
+      {d.caseStudy && (
+        <a href={href} class="primary">
+          Case study <Icon name="arrow-right" size={14} />
+        </a>
+      )}
+      {d.links.live && (
+        <ExtLink href={d.links.live}>
+          Live<span class="visually-hidden"> demo of {d.title}</span>
+        </ExtLink>
+      )}
+      {d.links.repo && (
+        <ExtLink href={resolveUrl(d.links.repo)}>
+          Code<span class="visually-hidden"> for {d.title}</span>
+        </ExtLink>
+      )}
+    </p>
+  </div>
+</article>
+
+<style>
+  .showcase {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    container-type: inline-size;
+  }
+  @media (min-width: 900px) {
+    .lead {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: var(--space-7);
+      align-items: center;
+    }
+  }
+  .frame {
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-2);
+    background: var(--sunken);
+    overflow: hidden;
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .showcase:hover .frame {
+      border-color: var(--ink-3);
+    }
+    .showcase:hover .visual :global(img) {
+      transform: scale(1.015);
+    }
+  }
+  .bar {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: var(--hairline) solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--lh-2xs);
+    color: var(--ink-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .visual {
+    aspect-ratio: 16 / 10;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .visual :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    transition: transform 400ms var(--ease);
+  }
+  /* The architecture drawing is wide and short: let its frame follow it instead of a 16:10 box */
+  .visual.diagram {
+    aspect-ratio: auto;
+    padding: var(--space-8) var(--space-5);
+    background: var(--surface);
+  }
+  /* Real screenshots are of light-themed apps: step them down slightly on a dark page */
+  :global(:root[data-theme='dark']) .visual :global(img) {
+    filter: brightness(0.86);
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .visual :global(img) {
+      filter: brightness(0.86);
+    }
+  }
+  .visual.diagram :global(.diagram) {
+    width: 100%;
+  }
+  .visual.pipeline {
+    padding: var(--space-5);
+    background: var(--surface);
+  }
+  .steps {
+    width: 100%;
+    align-self: center;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-4);
+    counter-reset: none;
+  }
+  .steps li {
+    position: relative;
+    display: grid;
+    gap: 0.125rem;
+    padding: var(--space-2) var(--space-3);
+    border: var(--hairline) solid var(--rule-strong);
+    border-radius: var(--radius-1);
+    background: var(--bg);
+  }
+  .steps li.llm {
+    border: 2px solid var(--accent);
+    background: var(--accent-soft);
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--ink-3);
+  }
+  .llm .num {
+    color: var(--accent);
+  }
+  .n {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: var(--lh-sm);
+  }
+  .s {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    color: var(--ink-3);
+  }
+  .text {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .index {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--accent);
+  }
+  .title {
+    font-size: var(--text-xl);
+    line-height: var(--lh-xl);
+  }
+  .card .title {
+    font-size: var(--text-lg);
+    line-height: var(--lh-lg);
+  }
+  .tile .title {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+  }
+  .title a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .title a:hover {
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+    }
+  }
+  .idea {
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    font-weight: 600;
+    color: var(--ink);
+    max-width: 40ch;
+  }
+  .tile .idea {
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    font-weight: 400;
+    color: var(--ink-2);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .stack {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-5);
+    font-size: var(--text-sm);
+  }
+  .links :global(a) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+  }
+  .links .primary {
+    font-weight: 600;
+  }
+</style>

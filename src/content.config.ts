@@ -67,6 +67,8 @@ const projects = defineCollection({
       context: z.string().max(40).optional(),
       cardNote: z.string().max(140).optional(),
       year: z.number().int().min(2020).max(2030),
+      /** Disciplines the project demonstrates; drives the area tags and the /work filters */
+      areas: z.array(z.enum(['backend', 'ai', 'cloud', 'frontend'])).min(1),
       builtWith: z
         .array(z.object({ purpose: z.string(), tech: z.string() }))
         .max(8)

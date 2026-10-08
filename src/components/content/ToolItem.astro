@@ -1,0 +1,184 @@
+---
+/**
+ * One toolkit entry as a native disclosure: mark, name and a "where" hint are always visible; the evidence opens
+ * below. No JavaScript. Items share a `name`, so supporting browsers keep one open at a time (exclusive accordion);
+ * others simply allow several. Nothing is hover-only.
+ */
+import type { Tech } from '../../data/toolkit';
+import Icon from '../site/Icon.astro';
+import marks from '../../assets/tech-marks.svg?url';
+
+export type ResolvedUse = { kind: string; label: string; href: string; short: string; note: string };
+
+interface Props {
+  tech: Tech;
+  uses: ResolvedUse[];
+  /** Number of public projects using it; enables the link to the filtered work index */
+  projectCount: number;
+}
+const { tech, uses, projectCount } = Astro.props;
+const hint = [...new Set(uses.map((u) => u.short))];
+const shown = hint.slice(0, 2).join(' · ');
+const more = hint.length - 2;
+---
+
+<details class="tool" name="toolkit" data-tech={tech.id} id={`tech-${tech.id}`}>
+  <summary>
+    {'icon' in tech.mark ? (
+      <svg class="mark" width="18" height="18" aria-hidden="true" focusable="false">
+        <use href={`${marks}#${tech.mark.icon}`} />
+      </svg>
+    ) : (
+      <span class="mark text" aria-hidden="true">
+        {tech.mark.text}
+      </span>
+    )}
+    <span class="name">{tech.name}</span>
+    <span class="hint">
+      <span class="visually-hidden">Used in: </span>
+      {shown}
+      {more > 0 && ` +${more}`}
+    </span>
+    <Icon name="chevron-down" size={16} class="chev" />
+  </summary>
+  <div class="uses">
+    <ul role="list">
+      {uses.map((u) => (
+        <li>
+          <span class="kind">{u.kind}</span>
+          <a href={u.href}>{u.label}</a>
+          <span class="note">{u.note}</span>
+        </li>
+      ))}
+    </ul>
+    {projectCount > 0 && (
+      <a class="filter" href={`/work?tech=${tech.id}`}>
+        {projectCount === 1 ? 'See the project' : `See all ${projectCount} projects`}
+        <span class="visually-hidden">
+          {projectCount === 1 ? ' that uses ' : ' that use '}
+          {tech.name}
+        </span>{' '}
+        <Icon name="arrow-right" size={14} />
+      </a>
+    )}
+  </div>
+</details>
+
+<style>
+  .tool {
+    border-top: var(--hairline) solid var(--rule);
+  }
+  summary {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      'mark name chev'
+      'mark hint chev';
+    align-items: center;
+    column-gap: var(--space-2);
+    min-height: var(--target);
+    padding-block: var(--space-2);
+    cursor: pointer;
+    list-style: none;
+    color: var(--ink);
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  .mark {
+    grid-area: mark;
+    align-self: center;
+    color: var(--ink-2);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .mark.text {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .name {
+    grid-area: name;
+    font-size: var(--text-base);
+    line-height: var(--lh-sm);
+    font-weight: 600;
+  }
+  .hint {
+    grid-area: hint;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    line-height: var(--lh-2xs);
+    color: var(--ink-3);
+  }
+  /* Phones: tools sit two to a row, so the "where" hint moves into the opened evidence */
+  @media (max-width: 639px) {
+    .hint {
+      display: none;
+    }
+    .name {
+      font-size: var(--text-sm);
+    }
+    summary {
+      grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+      column-gap: var(--space-1);
+    }
+    .uses {
+      padding-left: calc(1.75rem + var(--space-1));
+    }
+  }
+  summary :global(.chev) {
+    grid-area: chev;
+    color: var(--ink-3);
+    transition: transform var(--dur-disclosure) var(--ease);
+  }
+  .tool[open] summary :global(.chev) {
+    transform: rotate(180deg);
+  }
+  .tool[open] .mark,
+  .tool[open] .name {
+    color: var(--accent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    summary:hover .mark,
+    summary:hover .name {
+      color: var(--accent);
+    }
+  }
+  .uses {
+    padding: 0 0 var(--space-4) calc(2rem + var(--space-2));
+  }
+  .uses li {
+    padding-block: var(--space-2);
+    display: grid;
+    gap: 0.125rem;
+  }
+  .uses li + li {
+    border-top: var(--hairline) dashed var(--rule);
+  }
+  .kind {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .uses a {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    justify-self: start;
+  }
+  .note {
+    font-size: var(--text-sm);
+    line-height: var(--lh-sm);
+    color: var(--ink-2);
+  }
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--target);
+    font-size: var(--text-sm);
+  }
+</style>

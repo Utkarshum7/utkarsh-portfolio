@@ -1,0 +1,118 @@
+---
+/**
+ * Public repositories from the activity snapshot, each tied to the project it backs.
+ * `recent` lists the most recently committed-to repositories (home); otherwise all of them (Code page).
+ */
+import { getCollection } from 'astro:content';
+import { activity, repoInfo, fmtDay, PROJECT_BY_REPO } from '../../lib/activity';
+import ExtLink from './ExtLink.astro';
+import AreaTags from './AreaTags.astro';
+
+interface Props {
+  recent?: number;
+}
+const { recent } = Astro.props;
+const projects = new Map((await getCollection('projects')).map((p) => [p.id, p]));
+const rows = [...activity!.repos]
+  .sort((x, y) => (y.lastCommit ?? '').localeCompare(x.lastCommit ?? '') || y.commits - x.commits)
+  .slice(0, recent ?? undefined)
+  .map((r) => {
+    const p = projects.get(PROJECT_BY_REPO[r.key]!)!;
+    return {
+      ...r,
+      ...repoInfo(r.key),
+      project: p.data.title,
+      href: p.data.caseStudy ? `/work/${p.id}` : `/work#${p.id}`,
+      areas: p.data.areas,
+    };
+  });
+---
+
+<ul role="list" class:list={['repos', { compact: Boolean(recent) }]}>
+  {rows.map((r) => (
+    <li>
+      <div class="id">
+        <ExtLink href={r.url} class="repo">
+          <span class="owner">Utkarshum7/</span>
+          {r.name}
+        </ExtLink>
+        <a class="project" href={r.href}>
+          {r.project}
+        </a>
+      </div>
+      <AreaTags areas={r.areas} />
+      <dl class="facts">
+        <div>
+          <dt>Language</dt>
+          <dd>{r.language ?? '—'}</dd>
+        </div>
+        <div>
+          <dt>Commits, 52 wk</dt>
+          <dd>{r.commits}</dd>
+        </div>
+        <div>
+          <dt>Last commit</dt>
+          <dd>{r.lastCommit ? fmtDay(r.lastCommit) : 'Before this period'}</dd>
+        </div>
+      </dl>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .repos {
+    display: grid;
+    border-top: var(--hairline) solid var(--rule);
+  }
+  li {
+    display: grid;
+    gap: var(--space-2);
+    padding-block: var(--space-4);
+    border-bottom: var(--hairline) solid var(--rule);
+  }
+  @media (min-width: 900px) {
+    li {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 3fr) minmax(0, 6fr);
+      align-items: baseline;
+      gap: var(--space-5);
+    }
+  }
+  .id {
+    display: grid;
+    gap: 0.125rem;
+  }
+  .id :global(.repo) {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    justify-self: start;
+    overflow-wrap: anywhere;
+  }
+  .owner {
+    color: var(--ink-3);
+    font-weight: 400;
+  }
+  .project {
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+    justify-self: start;
+  }
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+  dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  dd {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

@@ -27,6 +27,15 @@ const label = {
   'not-responding': 'Not responding at last check',
 } as const;
 
+// Which project each running system belongs to (system ids are defined in systems.json)
+const PROJECT: Record<string, string> = {
+  'scopetrace-web': '/work/scopetrace',
+  'scopetrace-api': '/work/scopetrace',
+  'dsi-demo': '/work/support-intelligence',
+  'appointments-api': '/work#appointment-board',
+  robofleet: '/work#robofleet-monitor',
+};
+
 const rows = snapshot
   ? systemsFile.systems.map((s) => ({ ...s, result: snapshot.results.find((r) => r.id === s.id) }))
   : [];
@@ -47,11 +56,11 @@ const fmt = (iso: string) =>
       Running systems
     </h2>
     <p class="intro">
-      Checked automatically once a day. Free-tier services sleep when idle, so a first visit can take up to a
-      minute.
+      A snapshot taken when this site was last built, on {fmt(snapshot.checkedAt)}, not a live feed. Free-tier
+      services sleep when idle, so a first visit can take up to a minute.
     </p>
     <table class="status">
-      <caption class="visually-hidden">Status of deployed demos at the last automatic check</caption>
+      <caption class="visually-hidden">Status of deployed demos when this site was last built</caption>
       <thead>
         <tr>
           <th scope="col">System</th>
@@ -64,7 +73,7 @@ const fmt = (iso: string) =>
       <tbody>
         {rows.map((r) => (
           <tr>
-            <th scope="row">{r.name}</th>
+            <th scope="row">{PROJECT[r.id] ? <a href={PROJECT[r.id]}>{r.name}</a> : r.name}</th>
             <td>{r.host}</td>
             <td class="mono">{r.check}</td>
             <td>

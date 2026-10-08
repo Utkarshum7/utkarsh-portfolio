@@ -13,6 +13,8 @@ const PAGES = [
   '/work/scopetrace',
   '/work/support-intelligence',
   '/work/resume-screener',
+  '/code',
+  '/skills',
   '/about',
   '/colophon',
 ];

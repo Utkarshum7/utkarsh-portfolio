@@ -1,0 +1,95 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ActivityGraph from '../components/content/ActivityGraph.astro';
+import RepoList from '../components/content/RepoList.astro';
+import StatusPanel from '../components/content/StatusPanel.astro';
+import ExtLink from '../components/content/ExtLink.astro';
+import { activity, fmtDay } from '../lib/activity';
+import { profile } from '../data/profile';
+---
+
+<BaseLayout
+  title="Code · Utkarsh Amaresh"
+  description="Build activity and public repositories: commits over the last year, what each repository is for, and the deployed demos."
+>
+  <div class="container intro">
+    <p class="eyebrow">Code</p>
+    <h1>What I've been committing.</h1>
+    <p class="lead">
+      My public repositories, each tied to the project it backs, and a year of commits across them. The
+      numbers come from GitHub's public API and are a dated snapshot, not a live feed.
+    </p>
+    <p class="links">
+      <ExtLink href={profile.github}>All repositories on GitHub</ExtLink>
+    </p>
+  </div>
+
+  {activity && (
+    <section class="section container" aria-labelledby="build-activity">
+      <h2 class="section-label" id="build-activity">
+        Build activity
+      </h2>
+      <p class="total">
+        <strong>{activity.total}</strong> commits across {activity.repos.length} public repositories,{' '}
+        {fmtDay(activity.start)} to {fmtDay(activity.end)}
+      </p>
+      <ActivityGraph />
+    </section>
+  )}
+
+  {activity && (
+    <section class="section container" aria-labelledby="repositories">
+      <h2 class="section-label" id="repositories">
+        Repositories
+      </h2>
+      <RepoList />
+    </section>
+  )}
+
+  <StatusPanel />
+</BaseLayout>
+
+<style>
+  .intro {
+    padding-block: var(--space-8) var(--space-6);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin-top: var(--space-2);
+    max-width: 24ch;
+  }
+  .lead {
+    margin-top: var(--space-4);
+    font-size: var(--text-md);
+    line-height: var(--lh-md);
+    color: var(--ink-2);
+    max-width: var(--measure-lead);
+  }
+  .links {
+    margin-top: var(--space-4);
+  }
+  .links :global(a) {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target);
+  }
+  .total {
+    margin-bottom: var(--space-5);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+  }
+  .total strong {
+    font-family: var(--font-sans);
+    font-size: var(--text-2xl);
+    line-height: 1;
+    color: var(--ink);
+    margin-right: var(--space-2);
+  }
+</style>

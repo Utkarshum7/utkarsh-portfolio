@@ -3,7 +3,7 @@
  */
 export const profile = {
   name: 'Utkarsh Amaresh',
-  roleLine: 'Backend engineer · Python · AI systems',
+  roleLine: 'Backend engineer · AI systems · Cloud & DevOps',
   statement:
     'I build backend systems where AI assists and deterministic code decides, and I measure whether it works.',
   location: 'Bengaluru, India',

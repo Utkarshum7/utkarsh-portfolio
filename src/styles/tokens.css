@@ -33,6 +33,7 @@
     --text-xl: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
     --text-2xl: clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem);
     --text-hero: clamp(1.75rem, 1.25rem + 1.9vw, 2.5rem);
+    --text-name: clamp(2.75rem, 1.6rem + 4.2vw, 4.75rem);
     --lh-2xs: 1.4;
     --lh-xs: 1.45;
     --lh-sm: 1.5;

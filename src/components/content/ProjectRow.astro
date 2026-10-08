@@ -3,6 +3,8 @@
 import type { CollectionEntry } from 'astro:content';
 import ExtLink from './ExtLink.astro';
 import Dots from './Dots.astro';
+import AreaTags from './AreaTags.astro';
+import { techByProject } from '../../data/toolkit';
 import { resolveUrl } from '../../lib/urls';
 
 interface Props {
@@ -11,10 +13,19 @@ interface Props {
 }
 const { project, compact = false } = Astro.props;
 const d = project.data;
+const tech = techByProject().get(project.id) ?? [];
 ---
 
-<li class:list={['row', { compact }]}>
-  <h3 class="title">{d.title}</h3>
+<li
+  class:list={['row', { compact }]}
+  id={project.id}
+  data-areas={d.areas.join(' ')}
+  data-tech={tech.join(' ')}
+>
+  <div class="head">
+    <h3 class="title">{d.title}</h3>
+    <AreaTags areas={d.areas} />
+  </div>
   <p class="what">{d.summary}</p>
   <p class="context">
     <Dots items={[d.context, ...(compact ? [String(d.year)] : (d.stackLine?.split(' · ') ?? []))]} />
@@ -39,6 +50,14 @@ const d = project.data;
     gap: var(--space-1);
     padding-block: var(--space-4);
     border-top: var(--hairline) solid var(--rule);
+  }
+  .row {
+    scroll-margin-top: calc(var(--header-h) + var(--space-4));
+  }
+  .head {
+    display: grid;
+    gap: var(--space-1);
+    align-content: start;
   }
   .title {
     font-size: 1rem;

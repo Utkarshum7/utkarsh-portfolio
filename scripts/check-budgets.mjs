@@ -79,7 +79,11 @@ export function measurePage(dist, rel) {
   const fontsBytes = [...fontUrls].reduce((n, u) => n + size(local(u)), 0);
 
   const imgSrcs = [...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]);
-  const images = imgSrcs.reduce((n, s) => n + size(local(s)), 0);
+  // SVG sprites referenced by <use href="/file.svg#id"> are fetched once per file; counted gzipped (they're text)
+  const spriteFiles = new Set([...html.matchAll(/<use[^>]+href="(\/[^"#]+)#[^"]*"/g)].map((m) => m[1]));
+  const images =
+    imgSrcs.reduce((n, s) => n + size(local(s)), 0) +
+    [...spriteFiles].reduce((n, s) => n + gzFile(local(s)), 0);
 
   const htmlGz = gz(Buffer.from(html));
   return {
